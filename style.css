@@ -502,3 +502,216 @@ body { background-color: var(--bg-color); height: 100vh; overflow: hidden; }
 
 /* Qs by Qs styling */
 .q-legend-qz { display: flex; gap: 20px; font-size: 0.85rem; font-weight: 600; color: var(--qz-text-muted); }
+/* ================= NTA PREMIUM INSTRUCTIONS PAGE ================= */
+.nta-instructions-layout { display: flex; height: calc(100vh - 60px); background: #fff; border-top: 1px solid var(--qz-border); }
+
+/* Left Content Area */
+.nta-main-content { flex: 1; overflow-y: auto; padding: 0 0 50px 0; }
+.nta-inst-header { background: #D9EDF7; color: #31708F; font-weight: 700; font-size: 1.1rem; padding: 15px 30px; border-bottom: 1px solid #BCE8F1; letter-spacing: 0.5px; }
+.nta-inst-body { padding: 30px 60px; max-width: 900px; margin: 0 auto; color: #333; font-size: 0.95rem; line-height: 1.7; }
+
+/* Right Profile Sidebar */
+.nta-sidebar { width: 280px; border-left: 1px solid var(--qz-border); background: #FAFAFA; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+.profile-box { text-align: center; }
+.profile-box img { width: 120px; height: 120px; border-radius: 8px; border: 3px solid #E2E8F0; background: white; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+#inst-user-name { font-weight: 700; color: var(--qz-text-main); margin-top: 15px; font-size: 1.1rem; }
+
+/* Typography & Lists */
+.nta-list { padding-left: 20px; margin-bottom: 25px; }
+.nta-list li { margin-bottom: 18px; text-align: justify; }
+.text-red { color: #E74C3C; font-weight: 700; font-size: 0.85rem; margin-bottom: 20px; }
+
+/* Variable Duration Input */
+.duration-input { width: 70px; text-align: center; padding: 4px 8px; border: 2px solid var(--qz-border); border-radius: 6px; font-weight: 800; color: var(--qz-purple); font-size: 1rem; outline: none; transition: 0.2s; background: #F8FAFC; margin: 0 5px; }
+.duration-input:focus { border-color: var(--qz-purple); background: white; }
+
+/* The Official Palette Table & Shapes */
+.nta-table { width: 100%; border-collapse: collapse; margin-top: 15px; border: 1px solid #E2E8F0; }
+.nta-table td { padding: 12px 15px; border: 1px solid #E2E8F0; vertical-align: middle; font-size: 0.9rem; font-weight: 500; }
+
+.nta-shape { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 0 auto; font-size: 0.95rem; position: relative; }
+.s-not-visited { background: #E0E0E0; color: #333; border: 1px solid #ccc; border-radius: 4px; }
+.s-not-answered { background: #E74C3C; clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%); }
+.s-answered { background: #2ECC71; clip-path: polygon(50% 0%, 100% 25%, 100% 100%, 0 100%, 0 25%); }
+.s-marked { background: #9B59B6; border-radius: 50%; }
+.s-answered-marked { background: #9B59B6; border-radius: 50%; }
+.tiny-tick { position: absolute; bottom: -2px; right: -2px; background: #2ECC71; color: white; font-size: 0.5rem; width: 14px; height: 14px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; }
+
+/* Declaration Box & Proceed Button */
+.nta-declaration { background: #F8FAFC; border: 1px solid var(--qz-border); padding: 25px; border-radius: 8px; font-size: 0.9rem; color: var(--qz-text-muted); }
+.btn-nta-proceed { background: var(--qz-purple); color: white; padding: 14px 40px; font-size: 1.1rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; opacity: 0.5; box-shadow: 0 4px 15px rgba(79,70,229,0.3); }
+.btn-nta-proceed:not([disabled]):hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+/* ================= CANDIDATE PROFILE (LIVE EXAM) ================= */
+.exam-sidebar-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #E2E8F0;
+    background: #fff;
+    border-radius: 8px 8px 0 0;
+}
+.cand-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 600;
+    color: #1E293B;
+    font-size: 1.1rem;
+}
+.cand-profile img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    object-fit: cover;
+    border: 2px solid #CBD5E1;
+}
+
+/* ================= NTA PREMIUM EXAM PALETTE & LEGEND ================= */
+.nta-legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr; /* Locks columns. Right column slightly wider for longer text */
+    gap: 20px 10px; /* Perfect spacing between items */
+    padding: 20px 15px;
+    background: white;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.legend-item.full-width {
+    grid-column: 1 / -1; /* Spans across both columns */
+    justify-content: center;
+    padding-top: 15px;
+    border-top: 1px dashed #CBD5E1;
+    margin-top: -5px;
+}
+
+/* --- THE EXACT SHAPES --- */
+.nta-shape {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+    font-weight: 700;
+    font-size: 1.05rem;
+    position: relative;
+    flex-shrink: 0;
+    border: none;
+    box-sizing: border-box;
+    border-radius: 4px;
+    line-height: 1; /* Stops text from sagging */
+}
+
+.s-answered {
+    background: #22C55E;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 100%, 0 100%, 0 25%);
+    padding-top: 6px; /* Optically centers the number */
+    border-radius: 0 0 4px 4px;
+}
+
+.s-not-answered {
+    background: #EF4444;
+    clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+    padding-bottom: 6px; /* Optically centers the number */
+    border-radius: 4px 4px 0 0;
+}
+
+.s-not-visited {
+    background: #E2E8F0;
+    color: #1E293B !important; 
+    border: 1px solid #CBD5E1;
+}
+
+.s-marked, .s-answered-marked {
+    background: #A855F7;
+    border-radius: 50%;
+}
+
+.tiny-tick {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #22C55E;
+    color: white;
+    font-size: 0.6rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid white;
+    z-index: 2;
+}
+
+/* Lock the Question Palette Grid Below It */
+#question-palette {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 15px;
+    justify-items: center;
+}
+
+button.pal-btn.nta-shape {
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+button.pal-btn.nta-shape:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+button.pal-btn.s-answered { padding-top: 8px; }
+button.pal-btn.s-not-answered { padding-bottom: 8px; }
+/* ================= TAB POPOVER (i BUTTON) STRICT LAYOUT ================= */
+
+/* 1. Lock the row into two perfectly straight columns */
+.popover-stat-row {
+    display: grid !important;
+    grid-template-columns: 40px 1fr; /* 40px for icon, the rest for text */
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+/* 2. Force text to align to the straight left edge */
+.pop-text {
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1E293B;
+    white-space: nowrap;
+}
+
+/* 3. Strip away the stray margins and resize the mini-shapes */
+.shape-sm {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
+    margin: 0 !important; /* Kills the zig-zag centering effect */
+    justify-self: center; /* Keeps the shapes perfectly centered in their 40px column */
+}
+
+/* 4. Fix optical centering for the smaller sized arrows */
+.shape-sm.s-answered { padding-top: 5px !important; }
+.shape-sm.s-not-answered { padding-bottom: 5px !important; }
+
+/* 5. Scale down the tiny tick for the mini popover */
+.shape-sm .tiny-tick {
+    width: 12px;
+    height: 12px;
+    font-size: 0.45rem;
+    bottom: -3px;
+    right: -3px;
+    border-width: 1px;
+}
