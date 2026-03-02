@@ -33,6 +33,7 @@ let currentUser = null;
 // ================= AUTHENTICATION LOGIC =================
 
 // 1. Listen for Login State Changes (Runs automatically when page loads)
+// 1. Listen for Login State Changes
 auth.onAuthStateChanged((user) => {
     if (user) {
         // User is logged in!
@@ -40,13 +41,25 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('user-dashboard-section').style.display = 'block';
         
-        // Update the dashboard UI with their Google Name and Photo
         document.getElementById('dash-username').innerText = user.displayName;
         document.querySelector('.user-greeting .avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
         
-        // Refresh the UI (We will fetch from the real database next!)
-        updateVaultUI(); 
-        updatePerformanceLogsUI();
+        // ================= NEW: FETCH FROM FIRESTORE =================
+        // Fetch User's Test Vault
+        db.collection('users').doc(user.uid).collection('vault').get().then((querySnapshot) => {
+            testVault = [];
+            querySnapshot.forEach((doc) => testVault.push(doc.data()));
+            updateVaultUI();
+        });
+
+        // Fetch User's Performance Logs
+        db.collection('users').doc(user.uid).collection('logs').get().then((querySnapshot) => {
+            performanceLogs = [];
+            querySnapshot.forEach((doc) => performanceLogs.push(doc.data()));
+            updatePerformanceLogsUI();
+        });
+        // ==============================================================
+
     } else {
         // User is logged out
         currentUser = null;
@@ -72,6 +85,7 @@ function showScreen(screenId) {
     document.getElementById(screenId).classList.add('active-screen');
 }
 // ================= Screen 1: File Upload & Dashboard Logic =================
+// ================= Screen 1: File Upload & Dashboard Logic =================
 document.getElementById('json-upload').addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -81,16 +95,25 @@ document.getElementById('json-upload').addEventListener('change', function(event
         try {
             const parsedData = JSON.parse(e.target.result);
             
-            // Push to our local vault instead of starting the test
-            testVault.push(parsedData);
-            updateVaultUI();
+            if (currentUser) {
+                // USER IS LOGGED IN: Save permanently to Firestore
+                db.collection('users').doc(currentUser.uid).collection('vault').add(parsedData)
+                .then(() => {
+                    testVault.push(parsedData);
+                    updateVaultUI();
+                    alert(`"${parsedData.title || 'New Test'}" permanently saved to your Cloud Vault!`);
+                }).catch(err => console.error("Error saving to DB:", err));
+            } else {
+                // GUEST MODE: Save temporarily
+                testVault.push(parsedData);
+                updateVaultUI();
+                alert(`"${parsedData.title || 'New Test'}" added temporarily (Guest Mode).`);
+            }
             
-            alert(`"${parsedData.title || 'New Test'}" added to your Vault!`);
         } catch (error) {
             alert("Error parsing JSON file. Please ensure it is valid.");
             console.error(error);
         }
-        // Reset the file input so you can upload the same file again if needed
         event.target.value = ''; 
     };
     reader.readAsText(file);
@@ -627,6 +650,34 @@ function generateBeastReport(isNewSubmission = false) {
             sectionsData: JSON.parse(JSON.stringify(sectionsData))
         });
         updatePerformanceLogsUI();
+    }
+  // --- SAVE TO LOGS ---
+    if (isNewLog) {
+        const newLogData = {
+            title: testData.title || "Practice Test",
+            date: new Date().toLocaleString(),
+            score: totals.score,
+            maxScore: totals.max,
+            accuracy: accuracy,
+            testData: JSON.parse(JSON.stringify(testData)),
+            userAnswers: JSON.parse(JSON.stringify(userAnswers)),
+            timeSpent: JSON.parse(JSON.stringify(timeSpentOnQuestion)),
+            allQuestions: JSON.parse(JSON.stringify(allQuestions)),
+            sectionsData: JSON.parse(JSON.stringify(sectionsData))
+        };
+
+        if (currentUser) {
+            // USER IS LOGGED IN: Save report to Firestore
+            db.collection('users').doc(currentUser.uid).collection('logs').add(newLogData)
+            .then(() => {
+                performanceLogs.push(newLogData);
+                updatePerformanceLogsUI();
+            }).catch(err => console.error("Error saving log:", err));
+        } else {
+            // GUEST MODE: Save temporarily
+            performanceLogs.push(newLogData);
+            updatePerformanceLogsUI();
+        }
     }
     // Inject the specific subject sub-scores (Green, Orange, Blue)
     let miniHtml = '';
