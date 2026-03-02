@@ -45,10 +45,14 @@ auth.onAuthStateChanged((user) => {
         document.querySelector('.user-greeting .avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
         
         // ================= NEW: FETCH FROM FIRESTORE =================
-        // Fetch User's Test Vault
+    // Fetch User's Test Vault
         db.collection('users').doc(user.uid).collection('vault').get().then((querySnapshot) => {
             testVault = [];
-            querySnapshot.forEach((doc) => testVault.push(doc.data()));
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                data.docId = doc.id; // 🚨 NEW: Capture the specific database ID!
+                testVault.push(data);
+            });
             updateVaultUI();
         });
 
@@ -120,6 +124,7 @@ document.getElementById('json-upload').addEventListener('change', function(event
 });
 
 // Refreshes the Test Vault UI in the Dashboard
+// Refreshes the Test Vault UI in the Dashboard
 function updateVaultUI() {
     const vaultList = document.getElementById('db-test-list');
     vaultList.innerHTML = '';
@@ -135,18 +140,49 @@ function updateVaultUI() {
 
         const li = document.createElement('li');
         li.className = 'db-item-glass';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+
         li.innerHTML = `
-            <div>
+            <div style="flex:1;">
                 <strong style="display:block; margin-bottom: 5px; color: white;">${title}</strong>
                 <span style="font-size: 0.8rem; color: #94a3b8;">${qCount} Questions</span>
             </div>
-            <button class="btn-glass-sm" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;" onclick="attemptTest(${index})">
-                <i class="fas fa-play"></i> Attempt
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-glass-sm" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="deleteTestFromVault(${index})">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="btn-glass-sm" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;" onclick="attemptTest(${index})">
+                    <i class="fas fa-play"></i> Attempt
+                </button>
+            </div>
         `;
         vaultList.appendChild(li);
     });
 }
+window.deleteTestFromVault = function(index) {
+    if(!confirm("Are you sure you want to permanently delete this test?")) return;
+
+    const testToDel = testVault[index];
+
+    if (currentUser && testToDel.docId) {
+        // Delete from Firestore Database
+        db.collection('users').doc(currentUser.uid).collection('vault').doc(testToDel.docId).delete()
+        .then(() => {
+            testVault.splice(index, 1); // Remove from local array
+            updateVaultUI(); // Refresh UI
+        })
+        .catch(err => {
+            console.error("Error deleting test:", err);
+            alert("Could not delete the test from the database.");
+        });
+    } else {
+        // Delete in Guest Mode (Temporary array)
+        testVault.splice(index, 1);
+        updateVaultUI();
+    }
+};
 // ================= PERFORMANCE LOGS LOGIC =================
 function updatePerformanceLogsUI() {
     const list = document.getElementById('db-results-list');
