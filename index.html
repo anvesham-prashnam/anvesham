@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High-End Quizzing Platform</title>
+ <title>Anvesham | Premium Exam Platform</title>
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,7 +37,7 @@
             
             <div id="auth-section" class="auth-wrapper fade-in-up">
                 <div class="brand-logo"><i class="fas fa-atom"></i></div>
-                <h2>JEE Prep Pro</h2>
+                <h2>ANVESHAM</h2>
                 <p>Welcome to the next generation of competitive exam preparation.</p>
                 <div class="auth-buttons">
                     <button id="btn-google-login" class="btn-glass" style="background: white; color: #1E293B; border-color: #E2E8F0;">
@@ -92,39 +92,77 @@
         </div>
     </div>
 
-    <div id="screen-instructions" class="app-screen">
-        <header class="top-bar">
-            <div id="inst-test-title">Loading...</div>
+<div id="screen-instructions" class="app-screen">
+        <header class="top-bar" style="background: white; border-bottom: 1px solid var(--qz-border);">
+            <div id="inst-test-title" style="font-weight: 800; font-size: 1.3rem; color: var(--qz-text-main);">Anvesham Mock Test</div>
+            <button class="qz-btn-outline" onclick="showScreen('screen-dashboard')">Exit</button>
         </header>
-        <main class="instructions-container">
-            <div class="inst-content">
-                <h2 style="text-align: center; color: var(--primary-blue); margin-bottom: 20px;">INSTRUCTIONS TO CANDIDATES</h2>
-                <div class="exam-summary-cards">
-                    <div class="summary-card"><span class="muted">TOTAL QS</span><h3 id="inst-total-qs">--</h3></div>
-                    <div class="summary-card"><span class="muted">TEST DURATION</span><h3><span id="inst-duration">--</span> min</h3></div>
-                    <div class="summary-card"><span class="muted">TOTAL SCORE</span><h3 id="inst-total-score">--</h3></div>
-                </div>
-                <div class="instructions-text">
-                    <h3>General Instructions</h3>
-                    <ol>
-                        <li>Total duration of the paper is <span id="inst-duration-text">--</span> minutes.</li>
-                        <li>The countdown timer in the top right corner will display the remaining time.</li>
-                        <li>The Question Palette displayed on the right side of the screen will show the status of each question.</li>
+
+        <main class="nta-instructions-layout">
+            <div class="nta-main-content custom-scrollbar">
+                <div class="nta-inst-header">Instructions</div>
+                <div class="nta-inst-body">
+                    <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 25px; font-weight: 800; color: var(--qz-text-main);">INSTRUCTIONS TO CANDIDATES</h2>
+                    <h3 style="font-size: 1.1rem; margin-bottom: 15px; font-weight: 700; color: var(--qz-text-main);">GENERAL INSTRUCTIONS</h3>
+                    
+                    <ol class="nta-list">
+                        <li>
+                            Total duration of the paper is 
+                            <input type="number" id="inst-custom-duration" class="duration-input" value="60"> minutes.
+                        </li>
+                        <li>The on-screen computer clock will be set at the server. The countdown timer in the top right corner of the computer screen will display the remaining time (in minutes) available for you to complete the examination. When the timer reaches zero, the examination will end by itself automatically. You will not be required to end or submit your examination.</li>
+                        <li>
+                            The Question Palette displayed on the right side of screen will show the status of each question using one of the following symbols:
+                            
+                            <table class="nta-table">
+                                <tbody>
+                                    <tr>
+                                        <td width="60" align="center"><div class="nta-shape s-not-visited">1</div></td>
+                                        <td>You have not visited this question</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center"><div class="nta-shape s-not-answered">2</div></td>
+                                        <td>You have not answered this question</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center"><div class="nta-shape s-answered">3</div></td>
+                                        <td>You have answered this question</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center"><div class="nta-shape s-marked">4</div></td>
+                                        <td>You have NOT answered the question, but have marked the question for review</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center"><div class="nta-shape s-answered-marked">5<span class="tiny-tick">✔</span></div></td>
+                                        <td>The question(s) "Answered and Marked for Review" will be considered for evaluation</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </li>
+                        <li>The Marked for Review status for a question simply indicates that you would like to look at that question again.</li>
                     </ol>
-                    <br>
-                    <h3>Exam Structure & Marking Scheme</h3>
-                    <ul id="inst-sections-list"></ul>
-                </div>
-                <div class="declaration-box">
-                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="declaration-check" style="margin-top: 4px; transform: scale(1.2);">
-                        <span>I have read and understood the instructions. I declare that I am not in possession of any prohibited gadgets. I agree to abide by the instructions.</span>
-                    </label>
-                </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button id="btn-start-exam" class="btn btn-primary btn-large" disabled>I am ready to begin</button>
+
+                    <p class="text-red">All the questions will appear in English language.</p>
+
+                    <div class="nta-declaration">
+                        <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer;">
+                            <input type="checkbox" id="declaration-check" style="width:20px; height:20px; margin-top: 2px;">
+                            <span style="line-height: 1.5;">I have read and understood the instructions. All computer hardware allotted to me are in proper working condition. I declare that I am not in possession of / not wearing / not carrying any prohibited gadget like mobile phone, bluetooth devices etc. /any prohibited material with me into the Examination Hall. I agree that in case of not adhering to the instructions, I shall be liable to be debarred from this Test and/or to disciplinary action, which may include ban from future Tests / Examinations.</span>
+                        </label>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button id="btn-start-exam" class="btn-nta-proceed" disabled>I am ready to begin</button>
+                    </div>
                 </div>
             </div>
+
+            <aside class="nta-sidebar">
+                <div class="profile-box">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" id="inst-user-avatar" alt="User">
+                    <div id="inst-user-name">Candidate Name</div>
+                </div>
+            </aside>
         </main>
     </div>
 
@@ -170,17 +208,25 @@
             </section>
 
             <aside class="sidebar">
-                <div class="user-profile">
-                    <div style="width: 50px; height: 50px; background: #ddd; border-radius: 50%; margin-right: 15px; display: flex; align-items:center; justify-content:center;"><i class="fas fa-user"></i></div>
-                    <div class="user-name">Candidate</div>
+<div class="exam-sidebar-header">
+                <div class="cand-profile">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" id="exam-user-avatar" alt="User">
+                    <span id="exam-user-name">Candidate</span>
                 </div>
-                <div class="palette-legend">
-                    <div class="legend-item"><span class="badge answered" id="cnt-ans">0</span> Answered</div>
-                    <div class="legend-item"><span class="badge not-answered" id="cnt-not-ans">0</span> Not Answered</div>
-                    <div class="legend-item"><span class="badge not-visited" id="cnt-not-vis">0</span> Not Visited</div>
-                    <div class="legend-item"><span class="badge marked" id="cnt-marked">0</span> Marked</div>
-                    <div class="legend-item full-width"><span class="badge marked-answered" id="cnt-mark-ans">0</span> Answered & Marked for Review</div>
+            </div>
+
+            <div class="nta-legend-grid">
+                <div class="legend-item"><div class="nta-shape s-answered" id="cnt-ans">0</div> <span>Answered</span></div>
+                <div class="legend-item"><div class="nta-shape s-not-answered" id="cnt-not-ans">0</div> <span>Not Answered</span></div>
+                
+                <div class="legend-item"><div class="nta-shape s-not-visited" id="cnt-not-vis">0</div> <span>Not Visited</span></div>
+                <div class="legend-item"><div class="nta-shape s-marked" id="cnt-marked">0</div> <span>Marked</span></div>
+                
+                <div class="legend-item full-width">
+                    <div class="nta-shape s-answered-marked" id="cnt-mark-ans">0<span class="tiny-tick">✔</span></div> 
+                    <span>Answered & Marked</span>
                 </div>
+            </div>
                 <div class="section-title-bar"><span id="current-section-name">Section</span></div>
                 <div class="question-palette" id="question-palette"></div>
                 <button id="btn-submit" class="btn btn-submit">Submit Test</button>
