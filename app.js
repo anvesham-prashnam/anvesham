@@ -15,7 +15,7 @@ let potentialChartInstance = null; // For destroying old charts
 // ================= Navigation Logic =================
 // ================= FIREBASE SETUP =================
 // 🚨 PASTE YOUR REAL KEYS HERE 🚨
-const rtdb = firebase.database(); // The 16MB limit database!
+
 const firebaseConfig = {
   apiKey: "AIzaSyC0wJVy_nnn-pOzrg7NE7AYs4us3PYUgp0",
   authDomain: "anvesham-b15bb.firebaseapp.com",
@@ -47,12 +47,12 @@ auth.onAuthStateChanged((user) => {
         document.querySelector('.user-greeting .avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
         
         // ================= NEW: FETCH FROM FIRESTORE =================
-  // Fetch User's Massive Test Vault from RTDB
-        rtdb.ref(`users/${user.uid}/vault`).once('value', (snapshot) => {
+    // Fetch User's Test Vault
+        db.collection('users').doc(user.uid).collection('vault').get().then((querySnapshot) => {
             testVault = [];
-            snapshot.forEach((childSnapshot) => {
-                let data = childSnapshot.val();
-                data.docId = childSnapshot.key; // Grab the unique ID
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                data.docId = doc.id; // 🚨 NEW: Capture the specific database ID!
                 testVault.push(data);
             });
             updateVaultUI();
@@ -103,18 +103,12 @@ document.getElementById('json-upload').addEventListener('change', function(event
             
             if (currentUser) {
                 // USER IS LOGGED IN: Save permanently to Firestore
-                // USER IS LOGGED IN: Save massive file directly to RTDB
-                const newTestRef = rtdb.ref(`users/${currentUser.uid}/vault`).push();
-                newTestRef.set(parsedData)
+                db.collection('users').doc(currentUser.uid).collection('vault').add(parsedData)
                 .then(() => {
-                    parsedData.docId = newTestRef.key;
                     testVault.push(parsedData);
                     updateVaultUI();
-                    alert(`"${parsedData.title || 'New Test'}" saved to your Heavy Vault!`);
-                }).catch(err => {
-                    console.error("Error saving to RTDB:", err);
-                    alert("Error saving test. Check console for details.");
-                });
+                    alert(`"${parsedData.title || 'New Test'}" permanently saved to your Cloud Vault!`);
+                }).catch(err => console.error("Error saving to DB:", err));
             } else {
                 // GUEST MODE: Save temporarily
                 testVault.push(parsedData);
@@ -175,13 +169,16 @@ window.deleteTestFromVault = function(index) {
     const testToDel = testVault[index];
 
     if (currentUser && testToDel.docId) {
-       // Delete from RTDB
-        rtdb.ref(`users/${currentUser.uid}/vault/${testToDel.docId}`).remove()
+        // Delete from Firestore Database
+        db.collection('users').doc(currentUser.uid).collection('vault').doc(testToDel.docId).delete()
         .then(() => {
-            testVault.splice(index, 1);
-            updateVaultUI();
+            testVault.splice(index, 1); // Remove from local array
+            updateVaultUI(); // Refresh UI
         })
-        .catch(err => console.error("Error deleting test:", err));
+        .catch(err => {
+            console.error("Error deleting test:", err);
+            alert("Could not delete the test from the database.");
+        });
     } else {
         // Delete in Guest Mode (Temporary array)
         testVault.splice(index, 1);
