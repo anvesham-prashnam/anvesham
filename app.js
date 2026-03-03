@@ -1122,15 +1122,58 @@ function closeModal() {
 }
 
 function openInstructionsModal() {
-    // FIX: Changed '.instructions-text' to '.nta-inst-body' to match your new HTML
-    const instElement = document.querySelector('.nta-inst-body');
-    
-    if (!instElement) {
-        console.error("Instructions content not found!");
-        return;
+    // 1. Find the original instructions
+    const originalInstElement = document.querySelector('.nta-inst-body');
+    if (!originalInstElement) return;
+
+    // 2. Make an invisible "clone" so we don't accidentally delete the pre-exam screen buttons
+    const clone = originalInstElement.cloneNode(true);
+
+    // 3. Freeze the Duration Input
+    const durationInput = clone.querySelector('#inst-custom-duration');
+    if (durationInput) {
+        const span = document.createElement('strong');
+        span.innerText = testData.durationMinutes + " ";
+        durationInput.parentNode.replaceChild(span, durationInput);
     }
 
-    const instContent = instElement.innerHTML;
+    // 4. Freeze the Custom Marking Scheme Inputs
+    const overrideIds = [
+        'override-single-pos', 'override-single-neg',
+        'override-multi-pos', 'override-multi-neg',
+        'override-num-pos', 'override-num-neg'
+    ];
+    
+    overrideIds.forEach(id => {
+        const clonedInput = clone.querySelector(`#${id}`);
+        const originalInput = document.getElementById(id); // Get the actual typed value
+        if (clonedInput && originalInput) {
+            const span = document.createElement('strong');
+            span.innerText = originalInput.value;
+            clonedInput.parentNode.replaceChild(span, clonedInput);
+        }
+    });
+
+    // 5. Change "Override" title to "Active Scheme" and hide subtitle
+    const h3s = clone.querySelectorAll('h3');
+    h3s.forEach(h3 => {
+        if(h3.innerText.includes('Custom Marking Scheme')) {
+            h3.innerHTML = '<i class="fas fa-sliders-h"></i> Active Marking Scheme';
+            if(h3.nextElementSibling && h3.nextElementSibling.tagName === 'P') {
+                h3.nextElementSibling.style.display = 'none'; // Hide the "Set the marks..." subtitle
+            }
+        }
+    });
+
+    // 6. Completely strip out the Declaration Checkbox and "Ready to Begin" button
+    const declaration = clone.querySelector('.nta-declaration');
+    if (declaration) declaration.remove();
+    
+    const startBtn = clone.querySelector('#btn-start-exam');
+    if (startBtn) startBtn.parentElement.remove(); // Removes the button and its centering div
+
+    // 7. Inject the clean, frozen HTML into the modal
+    const instContent = clone.innerHTML;
     
     document.getElementById('modal-title').innerText = "Instructions";
     document.getElementById('modal-body').innerHTML = `
