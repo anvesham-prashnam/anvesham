@@ -131,6 +131,7 @@ document.getElementById('btn-compile-test').addEventListener('click', async () =
     
     const rows = document.querySelectorAll('.builder-row');
     let compiledQuestions = [];
+    let sectionsToSave = []; // NEW: Array to hold the separated subject files
     let hasError = false;
 
     const readFile = (file) => new Promise((resolve, reject) => {
@@ -153,10 +154,10 @@ document.getElementById('btn-compile-test').addEventListener('click', async () =
                 let qs = parsed.questions || parsed; 
                 
                 if (Array.isArray(qs)) {
-                    qs.forEach(q => {
-                       q.subject = secName; // NEW: Save Physics/Chem here instead!
-                        compiledQuestions.push(q);
-                    });
+                    qs.forEach(q => q.subject = secName);
+                    // Keep the chunk separated for the database!
+                    sectionsToSave.push({ subject: secName, questions: qs });
+                    compiledQuestions.push(...qs);
                 }
             } catch (e) {
                 alert(`Error parsing JSON for section: ${secName}`);
@@ -165,43 +166,58 @@ document.getElementById('btn-compile-test').addEventListener('click', async () =
         }
     }
 
-    document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
-
-    if (hasError) return;
-    if (compiledQuestions.length === 0) {
-        alert("Please upload at least one valid JSON file with questions.");
+    if (hasError || compiledQuestions.length === 0) {
+        document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
+        if(compiledQuestions.length === 0) alert("Please upload at least one valid JSON file.");
         return;
     }
 
-    const finalTestData = { title: title, duration: duration, questions: compiledQuestions };
+    document.getElementById('btn-compile-test').innerText = "Uploading to Database...";
+
+    // NEW: We do NOT put 'questions' in the main doc anymore to avoid the 1MB limit
+    const finalTestData = { 
+        title: title, 
+        duration: duration, 
+        isMultiDoc: true, 
+        qCount: compiledQuestions.length 
+    };
 
     if (currentUser) {
         db.collection('users').doc(currentUser.uid).collection('vault').add(finalTestData)
-        .then((docRef) => {
+        .then(async (docRef) => {
             finalTestData.docId = docRef.id; 
+            
+            // MAGIC FIX: Loop through each subject file (800kb each) and save them as separate docs!
+            for (let sec of sectionsToSave) {
+                await db.collection('users').doc(currentUser.uid).collection('vault').doc(docRef.id).collection('sections').add(sec);
+            }
+            
+            finalTestData.questions = compiledQuestions; // Keep in memory for immediate play
             testVault.push(finalTestData);
             updateVaultUI();
+            
+            document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
             alert(`"${title}" successfully compiled and saved to Vault!`);
         }).catch(err => {
             console.error("Error:", err);
-            alert("Upload failed. Ensure images are URLs.");
+            alert("Upload failed. Check console.");
+            document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
         });
     } else {
+        finalTestData.questions = compiledQuestions;
         testVault.push(finalTestData);
         updateVaultUI();
+        document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
         alert(`"${title}" compiled temporarily (Guest Mode).`);
     }
     
     document.getElementById('builder-test-title').value = '';
     rows.forEach(r => r.querySelector('.sec-file-input').value = '');
 });
-
-// Refreshes the Test Vault UI in the Dashboard
 // Refreshes the Test Vault UI in the Dashboard
 function updateVaultUI() {
     const vaultList = document.getElementById('db-test-list');
     vaultList.innerHTML = '';
-
     if (testVault.length === 0) {
         vaultList.innerHTML = `<li class="db-item-glass empty-state">Vault is currently empty.</li>`;
         return;
@@ -209,7 +225,8 @@ function updateVaultUI() {
 
     testVault.forEach((test, index) => {
         const title = test.title || `Mock Test ${index + 1}`;
-        const qCount = test.questions ? test.questions.length : 0;
+        // NEW: Check for qCount because the giant array is now stored safely on the backend
+        const qCount = test.questions ? test.questions.length : (test.qCount || 0);
 
         const li = document.createElement('li');
         li.className = 'db-item-glass';
@@ -223,16 +240,36 @@ function updateVaultUI() {
                 <span style="font-size: 0.8rem; color: #94a3b8;">${qCount} Questions</span>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="btn-glass-sm" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="deleteTestFromVault(${index})">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-                <button class="btn-glass-sm" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;" onclick="attemptTest(${index})">
-                    <i class="fas fa-play"></i> Attempt
-                </button>
+                <button class="btn-glass-sm" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="deleteTestFromVault(${index})"><i class="fas fa-trash-alt"></i></button>
+                <button class="btn-glass-sm" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;" onclick="attemptTest(${index})"><i class="fas fa-play"></i> Attempt</button>
             </div>
         `;
         vaultList.appendChild(li);
     });
+}
+
+// NEW ASYNC ENGINE: Downloads the split files and merges them right before starting
+window.attemptTest = async function(index) {
+    let testMeta = testVault[index]; 
+    
+    if (testMeta.isMultiDoc && currentUser && testMeta.docId && !testMeta.questions) {
+        document.body.style.cursor = 'wait'; // Show loading cursor
+        let fullQuestions = [];
+        
+        // Rapidly download all subject chunks
+        const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('vault').doc(testMeta.docId).collection('sections').get();
+        secSnapshot.forEach(doc => {
+            fullQuestions.push(...doc.data().questions);
+        });
+        
+        testMeta.questions = fullQuestions; // Cache them in memory
+        document.body.style.cursor = 'default';
+    }
+
+    testData = testMeta; 
+    processNewJSONFormat();
+    prepareInstructions();
+    showScreen('screen-instructions');
 }
 window.deleteTestFromVault = function(index) {
     if(!confirm("Are you sure you want to permanently delete this test?")) return;
@@ -284,20 +321,37 @@ function updatePerformanceLogsUI() {
     });
 }
 
-window.viewPastLog = function(index) {
+window.viewPastLog = async function(index) {
     const log = performanceLogs[index];
     
-    // Restore the exact state of the engine from the saved snapshot
-    testData = log.testData;
+    // Fetch the split log chunks if not already in memory
+    if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
+        document.body.style.cursor = 'wait';
+        let fullQuestions = [];
+        const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
+        secSnapshot.forEach(doc => {
+            fullQuestions.push(...doc.data().questions);
+        });
+        log.allQuestions = fullQuestions;
+        document.body.style.cursor = 'default';
+    }
+
+    testData = log.testData || { title: log.title, questions: log.allQuestions };
     userAnswers = log.userAnswers;
     timeSpentOnQuestion = log.timeSpent;
     allQuestions = log.allQuestions;
-    sectionsData = log.sectionsData;
-
-    // Generate the report WITHOUT saving it again (false flag)
-    generateBeastReport(false);
     
-    // Switch to analysis screen and force the Overview tab to be active
+    // Reconstruct UI tabs directly from allQuestions
+    sectionsData = [];
+    const grouped = {};
+    allQuestions.forEach(q => {
+        let key = q.subject + "|||" + q.type;
+        if (!grouped[key]) grouped[key] = { subject: q.subject, name: q.sectionName, type: q.type, questions: [] };
+        grouped[key].questions.push(q);
+    });
+    for (const key in grouped) sectionsData.push(grouped[key]);
+
+    generateBeastReport(false);
     showScreen('screen-analysis');
     switchAnalysisTab('overview', document.querySelector('.qz-nav-menu li:first-child'));
 };
@@ -899,21 +953,47 @@ allQuestions.forEach((q) => {
     let accuracy = totals.attempted > 0 ? ((totals.correct / totals.attempted) * 100).toFixed(2) : "0.00";
     document.getElementById('res-accuracy').innerText = `${accuracy}%`;
 // ================= NEW: SAVE SNAPSHOT TO LOGS =================
-    if (isNewSubmission) {
-        performanceLogs.push({
+if (isNewSubmission) {
+        const newLogData = {
             title: testData.title || "Practice Test",
             date: new Date().toLocaleString(),
             score: totals.score,
             maxScore: totals.max,
             accuracy: accuracy,
-            // Deep copy the state so subsequent tests don't overwrite this data
-            testData: JSON.parse(JSON.stringify(testData)),
             userAnswers: JSON.parse(JSON.stringify(userAnswers)),
             timeSpent: JSON.parse(JSON.stringify(timeSpentOnQuestion)),
-            allQuestions: JSON.parse(JSON.stringify(allQuestions)),
-            sectionsData: JSON.parse(JSON.stringify(sectionsData))
-        });
-        updatePerformanceLogsUI();
+            isMultiDoc: true 
+        };
+
+        if (currentUser) {
+            // Save base stats first
+            db.collection('users').doc(currentUser.uid).collection('logs').add(newLogData)
+            .then(async (docRef) => {
+                newLogData.docId = docRef.id;
+                
+                // Group the questions by subject and save them in safe chunks
+                let logSections = {};
+                allQuestions.forEach(q => {
+                    if(!logSections[q.subject]) logSections[q.subject] = [];
+                    logSections[q.subject].push(q);
+                });
+                
+                for (const subj in logSections) {
+                    await db.collection('users').doc(currentUser.uid).collection('logs').doc(docRef.id).collection('sections').add({
+                        subject: subj,
+                        questions: JSON.parse(JSON.stringify(logSections[subj]))
+                    });
+                }
+                
+                newLogData.allQuestions = JSON.parse(JSON.stringify(allQuestions)); 
+                performanceLogs.push(newLogData);
+                updatePerformanceLogsUI();
+            }).catch(err => console.error("Error saving log:", err));
+        } else {
+            newLogData.allQuestions = JSON.parse(JSON.stringify(allQuestions));
+            performanceLogs.push(newLogData);
+            updatePerformanceLogsUI();
+        }
     }
 // ================= CORRECTED: SAVE TO LOGS =================
     // Use 'isNewSubmission' (the parameter) instead of 'isNewLog'
