@@ -84,7 +84,14 @@ document.getElementById('btn-google-login').addEventListener('click', () => {
 });
 
 // 3. Logout Button Click
-
+document.getElementById('btn-logout').addEventListener('click', () => {
+    auth.signOut().then(() => {
+        // Refresh the page to completely reset the app state
+        window.location.reload(); 
+    }).catch((error) => {
+        console.error("Logout Error:", error);
+    });
+});
 
 function showScreen(screenId) {
     document.querySelectorAll('.app-screen').forEach(el => el.classList.remove('active-screen'));
@@ -1115,18 +1122,28 @@ function closeModal() {
 }
 
 function openInstructionsModal() {
-    // We reuse the exact HTML from the pre-exam screen
-    const instContent = document.querySelector('.instructions-text').innerHTML;
+    // FIX: Changed '.instructions-text' to '.nta-inst-body' to match your new HTML
+    const instElement = document.querySelector('.nta-inst-body');
+    
+    if (!instElement) {
+        console.error("Instructions content not found!");
+        return;
+    }
+
+    const instContent = instElement.innerHTML;
     
     document.getElementById('modal-title').innerText = "Instructions";
     document.getElementById('modal-body').innerHTML = `
-        <div class="qp-warning">Note that the timer is ticking while you read the instructions. Close this page to return to answering the questions.</div>
-        ${instContent}
+        <div class="qp-warning" style="background: #FFFBEB; border: 1px solid #FEF3C7; color: #92400E; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: 500;">
+            <i class="fas fa-exclamation-triangle"></i> Note that the timer is ticking while you read the instructions.
+        </div>
+        <div class="qp-paper-container" style="font-family: 'Inter', sans-serif; color: #1E293B;">
+            ${instContent}
+        </div>
     `;
     
     document.getElementById('app-modal').style.display = 'flex';
 }
-
 function openQuestionPaper() {
     document.getElementById('modal-title').innerText = "Full Question Paper";
     
