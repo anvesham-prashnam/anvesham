@@ -913,6 +913,32 @@ window.switchAnalysisTab = function(tabId, element) {
     document.querySelectorAll('.analysis-view').forEach(el => el.classList.remove('active-view'));
     document.getElementById('tab-' + tabId).classList.add('active-view');
 }
+// ================= Qs by Qs Filter Engine =================
+window.filterQbyQ = function(subject) {
+    // 1. Update Tab Button Styles
+    document.querySelectorAll('.qbyq-tab-btn').forEach(btn => {
+        if (btn.innerText.trim() === subject || (subject === 'All' && btn.innerText.trim() === 'All Subjects')) {
+            btn.style.background = '#38BDF8';
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            btn.style.boxShadow = '0 4px 10px rgba(56, 189, 248, 0.3)';
+        } else {
+            btn.style.background = 'white';
+            btn.style.color = '#64748B';
+            btn.style.border = '1px solid #E2E8F0';
+            btn.style.boxShadow = 'none';
+        }
+    });
+
+    // 2. Hide/Show the Subject Blocks
+    document.querySelectorAll('.qbyq-subj-wrapper').forEach(wrapper => {
+        if (subject === 'All' || wrapper.dataset.subj === subject) {
+            wrapper.style.display = 'block';
+        } else {
+            wrapper.style.display = 'none';
+        }
+    });
+};
 
 function submitExam() {
     clearInterval(examInterval);
@@ -1139,47 +1165,88 @@ allQuestions.forEach((q) => {
 
 
 
-// 4. Qs by Qs Bubbles (Grouped by Subject)
-    let qGridHtml = '';
-    
-    // We already have uniqueSubjects defined earlier, so we loop through that!
+// 4. Premium Qs by Qs Bubbles (Subject Tabs + Section Grouping)
+    let qGridHtml = `
+        <div class="qbyq-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #F1F5F9; padding-bottom: 15px; gap: 15px;">
+            <div class="qbyq-tabs" id="qbyq-subject-tabs" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="qbyq-tab-btn" onclick="filterQbyQ('All')" style="padding: 8px 18px; border-radius: 20px; border: none; background: #38BDF8; color: white; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);">All Subjects</button>
+    `;
+
+    // Generate the Tab Buttons dynamically
+    uniqueSubjects.forEach(subj => {
+        qGridHtml += `<button class="qbyq-tab-btn" onclick="filterQbyQ('${subj}')" style="padding: 8px 18px; border-radius: 20px; border: 1px solid #E2E8F0; background: white; color: #64748B; font-weight: 700; cursor: pointer; transition: 0.2s;">${subj}</button>`;
+    });
+
+    qGridHtml += `
+            </div>
+            <div class="qbyq-legend" style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: 700;">
+                <span style="color: #059669; display: flex; align-items: center; gap: 5px;"><i class="fas fa-check"></i> Correct</span>
+                <span style="color: #DC2626; display: flex; align-items: center; gap: 5px;"><i class="fas fa-times"></i> Wrong</span>
+                <span style="color: #94A3B8; display: flex; align-items: center; gap: 5px;"><i class="fas fa-minus"></i> Skipped</span>
+            </div>
+        </div>
+        <div id="qbyq-content-area">
+    `;
+
+    // Build the Content Blocks
     uniqueSubjects.forEach((subj, idx) => {
         let color = subjColors[idx % 3];
         let icon = subjIcons[idx % 3];
-        
-        qGridHtml += `<div class="q-section-block" style="margin-bottom: 30px; background: white; padding: 25px; border-radius: 16px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);">
-            <div style="color:${color}; font-weight:800; font-size:1.2rem; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; display:flex; align-items:center; gap:10px;">
-                <div class="subj-icon" style="background:${color}; width: 36px !important; height: 36px !important;"><i class="fas ${icon}" style="font-size:1rem !important;"></i></div> 
+
+        qGridHtml += `
+        <div class="qbyq-subj-wrapper" data-subj="${subj}" style="margin-bottom: 40px;">
+            <div style="color:${color}; font-weight:900; font-size:1.3rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; display:flex; align-items:center; gap:12px; border-bottom: 1px dashed ${color}40; padding-bottom: 10px;">
+                <div class="subj-icon" style="background:${color}; width: 34px !important; height: 34px !important; border-radius: 10px !important;"><i class="fas ${icon}" style="font-size:1rem !important; color: white;"></i></div>
                 ${subj}
-            </div>
-            <div class="q-bubble-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 15px;">`;
-        
-        // Filter all questions that belong ONLY to this subject
-        allQuestions.filter(q => q.subject === subj).forEach(q => {
-            let mark = '<i class="fas fa-minus"></i>';
-            let bg = '#F8FAFC'; let border = '#E2E8F0'; let text = '#94A3B8';
+            </div>`;
+
+        // Inner Grouping: Group by Section Type (SINGLE, MULTI, NUMERICAL)
+        let subjQs = allQuestions.filter(q => q.subject === subj);
+        let uniqueTypes = [...new Set(subjQs.map(q => q.type))];
+
+        uniqueTypes.forEach(type => {
+            let typeQs = subjQs.filter(q => q.type === type);
+            let secName = typeQs[0].sectionName || type;
             
-            // Note: We include 'partial' here so Multi-Correct partial marks show as green!
-            if(q.finalStatus === 'correct' || q.finalStatus === 'partial') { 
-                mark = '<i class="fas fa-check"></i>'; 
-                bg = '#D1FAE5'; border = '#10B981'; text = '#059669'; 
-            }
-            if(q.finalStatus === 'wrong') { 
-                mark = '<i class="fas fa-times"></i>'; 
-                bg = '#FEE2E2'; border = '#EF4444'; text = '#DC2626'; 
-            }
-            
+            // Assign custom colors based on Section Type
+            let typeColor = type === 'SINGLE' ? '#10B981' : (type === 'MULTI' ? '#F59E0B' : '#3B82F6');
+            let typeIcon = type === 'SINGLE' ? 'fa-dot-circle' : (type === 'MULTI' ? 'fa-check-square' : 'fa-keyboard');
+
             qGridHtml += `
-                <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-                    <div style="font-size:0.75rem; font-weight:700; color:#64748B;">Q${q.displayNumber}</div>
-                    <div style="width: 38px; height: 38px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bg}; color: ${text}; border: 2px solid ${border}; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="${q.sectionName}">
-                        ${mark}
+                <div class="q-section-block" style="margin-bottom: 25px; background: white; padding: 25px; border-radius: 16px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);">
+                    <div style="color:${typeColor}; font-weight:800; font-size:1.05rem; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+                        <i class="fas ${typeIcon}"></i> ${secName}
                     </div>
-                </div>
+                    <div class="q-bubble-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 18px;">
             `;
+
+            typeQs.forEach(q => {
+                let mark = '<i class="fas fa-minus"></i>';
+                let bg = '#F8FAFC'; let border = '#E2E8F0'; let text = '#94A3B8';
+
+                if(q.finalStatus === 'correct' || q.finalStatus === 'partial') {
+                    mark = '<i class="fas fa-check"></i>';
+                    bg = '#D1FAE5'; border = '#10B981'; text = '#059669';
+                } else if(q.finalStatus === 'wrong') {
+                    mark = '<i class="fas fa-times"></i>';
+                    bg = '#FEE2E2'; border = '#EF4444'; text = '#DC2626';
+                }
+
+                qGridHtml += `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                        <div style="font-size:0.8rem; font-weight:800; color:#64748B;">Q${q.displayNumber}</div>
+                        <div style="width: 42px; height: 42px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bg}; color: ${text}; border: 2px solid ${border}; box-shadow: 0 3px 8px rgba(0,0,0,0.06); font-size: 1.1rem; line-height: 1;" title="${q.sectionName}">
+                            ${mark}
+                        </div>
+                    </div>
+                `;
+            });
+            qGridHtml += `</div></div>`; 
         });
-        qGridHtml += `</div></div>`;
+        qGridHtml += `</div>`; 
     });
+
+    qGridHtml += `</div>`; 
     document.getElementById('qbyq-container').innerHTML = qGridHtml;
     // 5. Render exact Quizrr Stacked Potential Chart
     renderPotentialChart(totals);
