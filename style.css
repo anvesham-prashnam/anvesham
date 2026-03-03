@@ -715,3 +715,194 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     right: -3px;
     border-width: 1px;
 }
+/* Allow the dashboard to scroll smoothly if content overflows */
+.dash-wrapper {
+    max-height: 100vh;
+    overflow-y: auto; 
+    padding-top: 40px;    /* NEW: Adds the breathing room at the very top */
+    padding-bottom: 40px; /* Keeps the gap at the bottom */
+    box-sizing: border-box; /* NEW: Stops the padding from making the screen too tall */
+    
+    /* Completely hide the scrollbar in Firefox & Edge */
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+}
+
+/* Completely hide the scrollbar in Chrome, Safari, and Brave */
+.dash-wrapper::-webkit-scrollbar {
+    display: none;
+}
+/* ================= PREMIUM FILE UPLOAD BUTTONS ================= */
+.sec-file-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+}
+
+.sec-file-input::file-selector-button {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #38BDF8;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 15px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.sec-file-input::file-selector-button:hover {
+    background: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+/* ================= REAL EXAM PAPER STYLES ================= */
+.qp-paper-container {
+    font-family: 'Cambria', 'Times New Roman', serif; /* Formal paper font */
+    background: white;
+    color: black;
+    padding: 20px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.qp-main-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    border-bottom: 3px double black;
+    padding-bottom: 10px;
+}
+
+.qp-subject-header {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+    margin: 30px 0 20px 0;
+    padding: 8px 0;
+    background: #f8f9fa;
+}
+
+.qp-section-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 25px 0 10px 0;
+    text-decoration: underline;
+}
+
+.qp-instructions {
+    font-size: 0.95rem;
+    border: 2px solid black; /* Thick border for instructions */
+    padding: 15px;
+    margin-bottom: 25px;
+    background: #fff;
+    page-break-inside: avoid;
+}
+
+.qp-inst-list {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+}
+
+.qp-inst-list li {
+    margin-bottom: 6px;
+}
+
+.qp-marks-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+}
+
+/* THE REAL JEE EXAM BOX VIBE */
+.qp-q-block {
+    margin-bottom: 25px;
+    page-break-inside: avoid;
+    display: flex;
+    border: 1px solid black; /* The solid black box */
+    border-radius: 4px;      /* Slight modern curve */
+    overflow: hidden;        /* Keeps the shaded number box inside the lines */
+}
+
+.qp-q-num {
+    font-weight: bold;
+    font-size: 1.1rem;
+    width: 60px;
+    flex-shrink: 0;
+    padding: 15px;
+    border-right: 1px solid black; /* Line separating number from question */
+    background: #f1f5f9; /* Shaded background for the question number */
+    text-align: center;
+}
+
+.qp-q-content {
+    flex-grow: 1;
+    padding: 15px;
+}
+
+.qp-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.qp-opt-label {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.qp-img-wrapper img {
+    max-width: 80%;
+    max-height: 250px;
+    margin-top: 15px;
+    border: 1px solid #ccc;
+}
+/* ================= PRINTING ENGINE ================= */
+@media print {
+    /* Hide the entire app, backgrounds, and sidebars */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Make ONLY the modal visible */
+    #app-modal, #app-modal * {
+        visibility: visible;
+    }
+    
+    /* Force the modal to act like a normal webpage so it prints all pages, not just the scrolled view */
+    #app-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto;
+        background: white;
+        overflow: visible !important;
+    }
+    
+    .modal-content, .modal-body {
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Hide the header and buttons on the actual printout */
+    .modal-header, .close-btn, #btn-print-paper {
+        display: none !important;
+    }
+}
