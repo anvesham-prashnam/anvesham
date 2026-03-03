@@ -91,38 +91,102 @@ function showScreen(screenId) {
     document.getElementById(screenId).classList.add('active-screen');
 }
 // ================= Screen 1: File Upload & Dashboard Logic =================
-// ================= Screen 1: File Upload & Dashboard Logic =================
-document.getElementById('json-upload').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+// ================= NEW MULTI-SECTION TEST COMPILER =================
+// ================= NEW MULTI-SECTION TEST COMPILER =================
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const parsedData = JSON.parse(e.target.result);
-            
-            if (currentUser) {
-                // USER IS LOGGED IN: Save permanently to Firestore
-                db.collection('users').doc(currentUser.uid).collection('vault').add(parsedData)
-                .then(() => {
-                    testVault.push(parsedData);
-                    updateVaultUI();
-                    alert(`"${parsedData.title || 'New Test'}" permanently saved to your Cloud Vault!`);
-                }).catch(err => console.error("Error saving to DB:", err));
-            } else {
-                // GUEST MODE: Save temporarily
-                testVault.push(parsedData);
-                updateVaultUI();
-                alert(`"${parsedData.title || 'New Test'}" added temporarily (Guest Mode).`);
+// 0. Make the default pre-made rows removable
+document.querySelectorAll('.builder-row .btn-remove-sec').forEach(btn => {
+    btn.onclick = function() { this.closest('.builder-row').remove(); };
+});
+
+// 1. Add new empty section rows dynamically...
+// (Keep your existing btn-add-section code here)
+
+// 1. Add new empty section rows dynamically
+document.getElementById('btn-add-section').addEventListener('click', () => {
+    const container = document.getElementById('builder-sections-container');
+    const row = document.createElement('div');
+    row.className = 'builder-row';
+    row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+    row.innerHTML = `
+        <input type="text" class="sec-name-input" placeholder="Section Name" style="width: 150px; padding: 8px 12px; border-radius: 4px; border: none; background: #334155; color: white;">
+        <input type="file" class="sec-file-input" accept=".json" style="color: #94A3B8;">
+        <button class="btn-remove-sec" style="background: transparent; border: none; color: #EF4444; cursor: pointer;" title="Remove"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.btn-remove-sec').onclick = () => row.remove();
+});
+
+// 2. Compile all files into one master test and save
+document.getElementById('btn-compile-test').addEventListener('click', async () => {
+    const title = document.getElementById('builder-test-title').value || 'Custom Mock Test';
+    const duration = parseInt(document.getElementById('builder-test-duration').value) || 180;
+    
+    const rows = document.querySelectorAll('.builder-row');
+    let compiledQuestions = [];
+    let hasError = false;
+
+    const readFile = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
+        reader.readAsText(file);
+    });
+
+    document.getElementById('btn-compile-test').innerText = "Compiling...";
+
+    for (let row of rows) {
+        const secName = row.querySelector('.sec-name-input').value.trim() || 'Unnamed Section';
+        const fileInput = row.querySelector('.sec-file-input');
+        
+        if (fileInput.files.length > 0) {
+            try {
+                const fileContent = await readFile(fileInput.files[0]);
+                const parsed = JSON.parse(fileContent);
+                let qs = parsed.questions || parsed; 
+                
+                if (Array.isArray(qs)) {
+                    qs.forEach(q => {
+                       q.subject = secName; // NEW: Save Physics/Chem here instead!
+                        compiledQuestions.push(q);
+                    });
+                }
+            } catch (e) {
+                alert(`Error parsing JSON for section: ${secName}`);
+                hasError = true;
             }
-            
-        } catch (error) {
-            alert("Error parsing JSON file. Please ensure it is valid.");
-            console.error(error);
         }
-        event.target.value = ''; 
-    };
-    reader.readAsText(file);
+    }
+
+    document.getElementById('btn-compile-test').innerText = "Compile & Save Test";
+
+    if (hasError) return;
+    if (compiledQuestions.length === 0) {
+        alert("Please upload at least one valid JSON file with questions.");
+        return;
+    }
+
+    const finalTestData = { title: title, duration: duration, questions: compiledQuestions };
+
+    if (currentUser) {
+        db.collection('users').doc(currentUser.uid).collection('vault').add(finalTestData)
+        .then((docRef) => {
+            finalTestData.docId = docRef.id; 
+            testVault.push(finalTestData);
+            updateVaultUI();
+            alert(`"${title}" successfully compiled and saved to Vault!`);
+        }).catch(err => {
+            console.error("Error:", err);
+            alert("Upload failed. Ensure images are URLs.");
+        });
+    } else {
+        testVault.push(finalTestData);
+        updateVaultUI();
+        alert(`"${title}" compiled temporarily (Guest Mode).`);
+    }
+    
+    document.getElementById('builder-test-title').value = '';
+    rows.forEach(r => r.querySelector('.sec-file-input').value = '');
 });
 
 // Refreshes the Test Vault UI in the Dashboard
@@ -241,25 +305,22 @@ function attemptTest(index) {
 function processNewJSONFormat() {
     sectionsData = [];
     const grouped = {};
-
-    // Check if testData and questions exist
     if (testData && testData.questions) {
         testData.questions.forEach(q => {
-            if (!grouped[q.type]) grouped[q.type] = [];
-            grouped[q.type].push(q);
+            let subj = q.subject || 'General';
+            let type = q.type || 'SINGLE';
+            // NEW: Added MULTI recognition
+            let secName = type === 'SINGLE' ? 'Single Correct (MCQ)' : (type === 'MULTI' ? 'Multi Correct (MCQ)' : (type === 'NUMERICAL' ? 'Numerical Answer' : type));
+            
+            let key = subj + "|||" + type; // Groups by Subject AND Type
+            if (!grouped[key]) grouped[key] = { subject: subj, name: secName, type: type, questions: [] };
+            grouped[key].questions.push(q);
         });
     }
-
-    // Build the section arrays
-    for (const type in grouped) {
-        let sectionName = type === 'SINGLE' ? 'Single Correct (MCQ)' : (type === 'NUMERICAL' ? 'Numerical Answer' : type);
-        sectionsData.push({
-            name: sectionName,
-            type: type,
-            questions: grouped[type]
-        });
-    }
+    for (const key in grouped) sectionsData.push(grouped[key]);
 }
+
+
 // ================= Screen 2: Instructions =================
 function prepareInstructions() {
     document.getElementById('inst-test-title').innerText = testData.title || "Anvesham Mock Test";
@@ -311,6 +372,12 @@ if (declCheck && btnStart) {
 
         // Lock the duration into the engine
         testData.durationMinutes = customTime;
+// NEW: Capture Custom Marking Scheme Overrides
+        testData.customMarks = {
+            'SINGLE': { pos: parseFloat(document.getElementById('override-single-pos').value) || 4, neg: parseFloat(document.getElementById('override-single-neg').value) || 1 },
+            'MULTI': { pos: parseFloat(document.getElementById('override-multi-pos').value) || 4, neg: parseFloat(document.getElementById('override-multi-neg').value) || 2 },
+            'NUMERICAL': { pos: parseFloat(document.getElementById('override-num-pos').value) || 4, neg: parseFloat(document.getElementById('override-num-neg').value) || 0 }
+        };
 
         initExam();
         showScreen('screen-exam');
@@ -331,64 +398,64 @@ function initExam() {
     startTimer(testData.durationMinutes * 60);
     loadQuestion(0);
 }
-
 function flattenQuestions() {
-    allQuestions = []; 
-userAnswers = {}; 
-    timeSpentOnQuestion = {}; // NEW: Reset time for new attempt
-    currentQuestionStartTime = 0; // NEW: Reset time for new attempt
+    allQuestions = []; userAnswers = {}; timeSpentOnQuestion = {}; currentQuestionStartTime = 0; 
     sectionsData.forEach((sec, sIdx) => {
         sec.questions.forEach((q) => {
             let globalIndex = allQuestions.length;
+let override = testData.customMarks[q.type];
             allQuestions.push({
                 ...q,
+                subject: sec.subject,
                 sectionName: sec.name,
                 globalIndex: globalIndex,
                 displayNumber: globalIndex + 1,
-                secIndex: sIdx,
-                posMarks: q.marks.pos,
-                negMarks: q.marks.neg
+                secIndex: sIdx, 
+                posMarks: override ? override.pos : (q.marks ? q.marks.pos : 4), // OVERRIDE LOGIC
+                negMarks: override ? override.neg : (q.marks ? q.marks.neg : 1)
             });
-            questionStates[globalIndex] = 0; // 0: Not Visited
+            questionStates[globalIndex] = 0; 
         });
     });
 }
 
-// Replace the existing renderTabs function with this:
 function renderTabs() {
-    const tabsContainer = document.getElementById('section-tabs');
-    tabsContainer.innerHTML = '';
-    
-    sectionsData.forEach((sec, idx) => {
-        const firstQuestionOfSection = allQuestions.find(q => q.secIndex === idx);
+    const subjContainer = document.getElementById('subject-tabs');
+    subjContainer.innerHTML = '';
+
+    let uniqueSubjects = [...new Set(sectionsData.map(s => s.subject))];
+    uniqueSubjects.forEach((subj, idx) => {
         const tab = document.createElement('div');
-        tab.className = `tab ${idx === 0 ? 'active' : ''}`;
-        tab.dataset.secIndex = idx;
+        tab.className = `subj-tab`;
         
-        // ADDED: The hoverable wrapper and the hidden dropdown menu structure
+        // NEW: We add a data attribute so the JS always knows the exact subject name
+        tab.setAttribute('data-subj', subj);
+        
+        // NEW: Removed "opacity: 0.7" and used dimmed text "color: rgba(255,255,255,0.7)" instead
+        tab.style.cssText = `padding: 10px 20px; color: rgba(255,255,255,0.7); cursor: pointer; border-radius: 6px 6px 0 0; font-weight: 600; font-size: 0.95rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; position: relative;`;
+        
+        let safeSubjId = subj.replace(/\s+/g, '-');
+        
         tab.innerHTML = `
-            ${sec.name} 
+            <span>${subj}</span>
             <div class="tab-info-wrapper">
-                <span class="info-icon">i</span>
-                <div class="info-popover" id="popover-${idx}">
-                    </div>
+                <span class="info-icon" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);">i</span>
+                <div class="info-popover" id="subj-popover-${safeSubjId}" style="top: 100%; bottom: auto; margin-top: 5px; z-index: 100;"></div>
             </div>
         `;
         
-        // Ensure clicking the tab changes the section, but ignore clicks on the 'i' icon itself
-        tab.onclick = (e) => { 
-            if(!e.target.classList.contains('info-icon') && !e.target.closest('.info-popover') && firstQuestionOfSection) {
-                loadQuestion(firstQuestionOfSection.globalIndex); 
+        tab.onclick = (e) => {
+            if(!e.target.classList.contains('info-icon') && !e.target.closest('.info-popover')) {
+                let firstSecOfSubj = sectionsData.findIndex(s => s.subject === subj);
+                let firstQ = allQuestions.find(q => q.secIndex === firstSecOfSubj);
+                if(firstQ) loadQuestion(firstQ.globalIndex);
             }
         };
-        tabsContainer.appendChild(tab);
+        subjContainer.appendChild(tab);
     });
-    
-    updatePopovers(); // Initialize the counts
 }
-
-// NEW: Strict grid HTML for hover popovers
 function updatePopovers() {
+    // 1. UPDATE BOTTOM ROW (Section Popovers)
     sectionsData.forEach((sec, idx) => {
         let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
         
@@ -423,14 +490,80 @@ function updatePopovers() {
             `;
         }
     });
-}
 
-function updateActiveTab(secIndex) {
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.toggle('active', parseInt(tab.dataset.secIndex) === secIndex);
+    // 2. NEW: UPDATE TOP ROW (Subject Popovers - Combines MCQs + Numerical)
+    let uniqueSubjects = [...new Set(sectionsData.map(s => s.subject))];
+    uniqueSubjects.forEach(subj => {
+        let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
+        
+        // Filter by the entire subject, not just the section index!
+        allQuestions.filter(q => q.subject === subj).forEach(q => {
+            counts[questionStates[q.globalIndex]]++;
+        });
+        
+        let safeSubjId = subj.replace(/\s+/g, '-');
+        const popover = document.getElementById(`subj-popover-${safeSubjId}`);
+        if(popover) {
+            popover.innerHTML = `
+                <div class="popover-header">${subj} Overall</div>
+                <div class="popover-stat-row">
+                    <div class="nta-shape shape-sm s-answered">${counts[2]}</div> 
+                    <span class="pop-text">Answered</span>
+                </div>
+                <div class="popover-stat-row">
+                    <div class="nta-shape shape-sm s-not-answered">${counts[1]}</div> 
+                    <span class="pop-text">Not Answered</span>
+                </div>
+                <div class="popover-stat-row">
+                    <div class="nta-shape shape-sm s-not-visited">${counts[0]}</div> 
+                    <span class="pop-text">Not Visited</span>
+                </div>
+                <div class="popover-stat-row">
+                    <div class="nta-shape shape-sm s-marked">${counts[3]}</div> 
+                    <span class="pop-text">Marked</span>
+                </div>
+                <div class="popover-stat-row">
+                    <div class="nta-shape shape-sm s-answered-marked">${counts[4]}<span class="tiny-tick">✔</span></div> 
+                    <span class="pop-text">Answered & Marked</span>
+                </div>
+            `;
+        }
     });
 }
-
+function updateActiveTab(secIndex) {
+    const currentSubj = sectionsData[secIndex].subject;
+    
+// 1. Highlight Top Row (Subject)
+    document.querySelectorAll('.subj-tab').forEach(tab => {
+        // NEW: Check the data attribute, not the innerText!
+        if (tab.getAttribute('data-subj') === currentSubj) {
+            tab.style.background = 'var(--primary-blue)';
+            tab.style.color = 'white'; // Solid white text
+        } else {
+            tab.style.background = 'transparent';
+            tab.style.color = 'rgba(255,255,255,0.7)'; // Dimmed text (keeps parent solid)
+        }
+    });
+    // 2. Render Bottom Row (Sections for active Subject)
+    const secContainer = document.getElementById('section-tabs');
+    secContainer.innerHTML = '';
+    
+    sectionsData.forEach((sec, idx) => {
+        if (sec.subject === currentSubj) {
+            const tab = document.createElement('div');
+            tab.className = `tab ${idx === secIndex ? 'active' : ''}`;
+            tab.innerHTML = `${sec.name} <div class="tab-info-wrapper"><span class="info-icon">i</span><div class="info-popover" id="popover-${idx}"></div></div>`;
+            tab.onclick = (e) => { 
+                if(!e.target.classList.contains('info-icon') && !e.target.closest('.info-popover')) {
+                    let firstQ = allQuestions.find(q => q.secIndex === idx);
+                    if(firstQ) loadQuestion(firstQ.globalIndex); 
+                }
+            };
+            secContainer.appendChild(tab);
+        }
+    });
+    updatePopovers();
+}
 function loadQuestion(index) {
     if(index < 0 || index >= allQuestions.length) return;
 // --- NEW: TIME TRACKING LOGIC ---
@@ -448,7 +581,15 @@ function loadQuestion(index) {
     if(questionStates[index] === 0) questionStates[index] = 1; // Mark viewed
 
     document.getElementById('current-q-num').innerText = q.displayNumber;
-    document.getElementById('q-content').innerHTML = q.text;
+let diagData = q.diagram || q.image; 
+    let imageHtml = '';
+    if (diagData) {
+        let imgSrc = diagData.startsWith('data:image') ? diagData : `data:image/png;base64,${diagData}`;
+        imageHtml = `<div style="margin-top: 15px; text-align: left;">
+                        <img src="${imgSrc}" style="max-width: 100%; max-height: 350px; border-radius: 8px; border: 1px solid var(--qz-border); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                     </div>`;
+    }
+    document.getElementById('q-content').innerHTML = q.text + imageHtml;
     document.getElementById('q-pos-marks').innerText = `+${q.posMarks}`;
     document.getElementById('q-neg-marks').innerText = `-${q.negMarks}`;
     document.getElementById('q-type-text').innerText = q.type;
@@ -460,19 +601,34 @@ function loadQuestion(index) {
     optionsContainer.innerHTML = '';
     
     // Dynamic rendering based on question type
+// Dynamic rendering based on question type
     if (q.type === 'SINGLE') {
         q.options.forEach((opt, oIdx) => {
             const isChecked = userAnswers[index] === oIdx ? 'checked' : '';
             const div = document.createElement('div');
             div.className = 'option-row';
-            div.innerHTML = `
-                <input type="radio" name="option" id="opt${oIdx}" value="${oIdx}" ${isChecked}>
-                <label for="opt${oIdx}" style="flex:1; cursor:pointer;">${opt}</label>
-            `;
+            div.innerHTML = `<input type="radio" name="option" id="opt${oIdx}" value="${oIdx}" ${isChecked}> <label for="opt${oIdx}" style="flex:1; cursor:pointer;">${opt}</label>`;
             div.onclick = () => document.getElementById(`opt${oIdx}`).checked = true;
             optionsContainer.appendChild(div);
         });
-    } else if (q.type === 'NUMERICAL') {
+    }else if (q.type === 'MULTI') {
+        // NEW: MULTI CHECKBOX ENGINE
+        let selectedArr = userAnswers[index] || [];
+        q.options.forEach((opt, oIdx) => {
+            const isChecked = selectedArr.includes(oIdx) ? 'checked' : '';
+            const div = document.createElement('div');
+            div.className = 'option-row';
+            div.innerHTML = `<input type="checkbox" name="option-multi" id="opt${oIdx}" value="${oIdx}" ${isChecked}> <label for="opt${oIdx}" style="flex:1; cursor:pointer;">${opt}</label>`;
+            div.onclick = (e) => { 
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                    let cb = document.getElementById(`opt${oIdx}`); cb.checked = !cb.checked;
+                }
+            };
+            optionsContainer.appendChild(div);
+        });
+    }
+
+else if (q.type === 'NUMERICAL') {
         const val = userAnswers[index] !== undefined ? userAnswers[index] : '';
         optionsContainer.innerHTML = `
             <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border: 1px solid var(--border-color); border-radius: 4px;">
@@ -541,6 +697,11 @@ function getUserAnswer() {
     if (q.type === 'SINGLE') {
         const selected = document.querySelector('input[name="option"]:checked');
         return selected ? parseInt(selected.value) : null;
+    } else if (q.type === 'MULTI') {
+        // NEW: Grab all checked boxes
+        const selectedNodes = document.querySelectorAll('input[name="option-multi"]:checked');
+        if (selectedNodes.length === 0) return null;
+        return Array.from(selectedNodes).map(n => parseInt(n.value)); 
     } else if (q.type === 'NUMERICAL') {
         const val = document.getElementById('num-answer').value.trim();
         return val !== '' ? val : null;
@@ -562,11 +723,9 @@ document.getElementById('btn-save-next').addEventListener('click', () => {
 
 document.getElementById('btn-clear').addEventListener('click', () => {
     const q = allQuestions[currentQuestionIndex];
-    if (q.type === 'SINGLE') {
-        document.querySelectorAll('input[name="option"]').forEach(opt => opt.checked = false);
-    } else if (q.type === 'NUMERICAL') {
-        document.getElementById('num-answer').value = '';
-    }
+    if (q.type === 'SINGLE') document.querySelectorAll('input[name="option"]').forEach(opt => opt.checked = false);
+    else if (q.type === 'MULTI') document.querySelectorAll('input[name="option-multi"]').forEach(opt => opt.checked = false);
+    else if (q.type === 'NUMERICAL') document.getElementById('num-answer').value = '';
     
     delete userAnswers[currentQuestionIndex];
     questionStates[currentQuestionIndex] = 1; 
@@ -661,48 +820,64 @@ function generateBeastReport(isNewSubmission = false) {
     const subjColors = ['var(--subj-green)', 'var(--subj-orange)', 'var(--subj-blue)'];
     const subjIcons = ['fa-atom', 'fa-flask', 'fa-square-root-alt'];
 
-    sectionsData.forEach((sec, idx) => {
-        sectionStats[sec.name] = { 
+let uniqueSubjects = [...new Set(allQuestions.map(q => q.subject))];
+    uniqueSubjects.forEach((subj, idx) => {
+        sectionStats[subj] = { 
             score: 0, max: 0, correct: 0, wrong: 0, unattempted: 0, total: 0, 
             color: subjColors[idx % 3], icon: subjIcons[idx % 3] 
         };
     });
-
-    allQuestions.forEach((q) => {
+allQuestions.forEach((q) => {
         totals.max += q.posMarks;
-        sectionStats[q.sectionName].max += q.posMarks;
-        sectionStats[q.sectionName].total++;
+        sectionStats[q.subject].max += q.posMarks; // Fixed crash bug here!
+        sectionStats[q.subject].total++;
         
-        // Sum time
         if(timeSpentOnQuestion[q.globalIndex]) totals.time += timeSpentOnQuestion[q.globalIndex];
         
         let diff = ['Easy', 'Moderate', 'Moderate', 'Tough'][q.globalIndex % 4]; 
         diffStats[diff].total++;
 
         const userAnswer = userAnswers[q.globalIndex];
-        let isCorrect = false; let attempted = false;
+        let isCorrect = false; let attempted = false; let earnedMarks = 0; let lostMarks = 0;
 
         if (userAnswer !== undefined && userAnswer !== null && userAnswer !== '') {
             attempted = true;
             totals.attempted++;
-            if (q.type === 'SINGLE') isCorrect = (userAnswer === q.correctIndex);
-            else if (q.type === 'NUMERICAL') isCorrect = (parseFloat(userAnswer) === parseFloat(q.correctNum));
+            if (q.type === 'SINGLE') {
+                isCorrect = (userAnswer === q.correctIndex);
+                if(isCorrect) earnedMarks = q.posMarks; else lostMarks = q.negMarks;
+            } else if (q.type === 'NUMERICAL') {
+                isCorrect = (parseFloat(userAnswer) === parseFloat(q.correctNum));
+                if(isCorrect) earnedMarks = q.posMarks; else lostMarks = q.negMarks;
+            } else if (q.type === 'MULTI') {
+                // NEW: PARTIAL MARKING FOR AITSP FORMAT
+                let correctArr = (q.correctIndices && q.correctIndices.length > 0) ? q.correctIndices : (Array.isArray(q.correctIndex) ? q.correctIndex : [q.correctIndex]);
+                let hasWrong = userAnswer.some(val => !correctArr.includes(val));
+                
+                if (hasWrong) {
+                    isCorrect = false; lostMarks = q.negMarks; 
+                } else if (userAnswer.length === correctArr.length) {
+                    isCorrect = true; earnedMarks = q.posMarks; 
+                } else {
+                    isCorrect = true; earnedMarks = userAnswer.length; // Partial marks
+                    q.isPartial = true;
+                }
+            }
         }
 
         if (!attempted) {
-            totals.unattempted++; sectionStats[q.sectionName].unattempted++; diffStats[diff].unattempted++;
+            totals.unattempted++; sectionStats[q.subject].unattempted++; diffStats[diff].unattempted++;
             q.finalStatus = 'unattempted';
         } else if (isCorrect) {
-            totals.correct++; totals.score += q.posMarks; totals.posMarks += q.posMarks;
-            sectionStats[q.sectionName].correct++; sectionStats[q.sectionName].score += q.posMarks;
-            diffStats[diff].correct++; q.finalStatus = 'correct';
+            totals.correct++; totals.score += earnedMarks; totals.posMarks += earnedMarks;
+            sectionStats[q.subject].correct++; sectionStats[q.subject].score += earnedMarks;
+            diffStats[diff].correct++; q.finalStatus = q.isPartial ? 'partial' : 'correct';
         } else {
-            totals.wrong++; totals.score -= q.negMarks; totals.negMarks += q.negMarks;
-            sectionStats[q.sectionName].wrong++; sectionStats[q.sectionName].score -= q.negMarks;
+            totals.wrong++; totals.score -= lostMarks; totals.negMarks += lostMarks;
+            sectionStats[q.subject].wrong++; sectionStats[q.subject].score -= lostMarks;
             diffStats[diff].wrong++; q.finalStatus = 'wrong';
         }
     });
-
     // 1. Populate Overview Tab
     document.getElementById('qz-sidebar-title').innerText = testData.title || "Practice Test";
     document.getElementById('res-total-score').innerText = totals.score;
@@ -953,25 +1128,158 @@ function openInstructionsModal() {
 }
 
 function openQuestionPaper() {
-    document.getElementById('modal-title').innerText = "Question Paper";
+    document.getElementById('modal-title').innerText = "Full Question Paper";
     
-    let html = `<div class="qp-warning">Note that the timer is ticking while you read the questions. Close this page to return to answering the questions.</div>`;
+    let header = document.querySelector('.modal-header');
+    if(!document.getElementById('btn-print-paper')) {
+        let printBtn = document.createElement('button');
+        printBtn.id = 'btn-print-paper';
+        printBtn.className = 'btn-glass-sm';
+        printBtn.style.cssText = 'background: #2563EB; color: white; border: none; margin-right: 15px; font-weight: bold; padding: 6px 15px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;';
+        printBtn.innerHTML = '<i class="fas fa-print"></i> Print Paper';
+        printBtn.onclick = () => window.print();
+        header.insertBefore(printBtn, header.querySelector('.close-btn'));
+    }
+
+    const modalBody = document.getElementById('modal-body');
+    modalBody.innerHTML = ''; 
+
+    let paperContainer = document.createElement('div');
+    paperContainer.className = 'qp-paper-container';
+
+    let titleDiv = document.createElement('div');
+    titleDiv.className = 'qp-main-title';
+    titleDiv.innerText = testData.title || 'JEE Advanced Mock Test';
+    paperContainer.appendChild(titleDiv);
     
-    allQuestions.forEach(q => {
-        html += `
-            <div class="qp-item">
-                <div class="qp-num">Question No. ${q.displayNumber} (${q.sectionName})</div>
-                <div class="qp-text">${q.text}</div>
-            </div>
-        `;
+    let uniqueSubjects = [...new Set(sectionsData.map(s => s.subject))];
+    
+    uniqueSubjects.forEach(subj => {
+        let subjHeader = document.createElement('div');
+        subjHeader.className = 'qp-subject-header';
+        subjHeader.innerText = `PART: ${subj}`;
+        paperContainer.appendChild(subjHeader);
+        
+        let subjSections = sectionsData.filter(s => s.subject === subj);
+        
+        subjSections.forEach((sec, localSecIdx) => {
+            let secHeader = document.createElement('div');
+            secHeader.className = 'qp-section-header';
+            secHeader.innerText = `SECTION ${localSecIdx + 1}: ${sec.name}`;
+            paperContainer.appendChild(secHeader);
+            
+            let processedQs = allQuestions.filter(q => q.subject === subj && q.sectionName === sec.name);
+            if(processedQs.length === 0) return;
+
+            let qCount = processedQs.length;
+            let posM = processedQs[0].posMarks;
+            let negM = processedQs[0].negMarks;
+            
+            // ================= REAL JEE ADVANCED INSTRUCTIONS =================
+            let instText = "";
+            if(sec.type === 'SINGLE') {
+                instText = `<ul class="qp-inst-list">
+                    <li>This section contains <b>${qCount}</b> questions.</li>
+                    <li>Each question has FOUR options (A), (B), (C) and (D). <b>ONLY ONE</b> of these four options is the correct answer.</li>
+                    <li>For each question, choose the option corresponding to the correct answer.</li>
+                    <li>Answer to each question will be evaluated according to the following marking scheme:
+                        <div class="qp-marks-grid">
+                            <div><b>Full Marks</b></div><div><b>: +${posM}</b> If ONLY the correct option is chosen.</div>
+                            <div><b>Zero Marks</b></div><div><b>: 0</b> If none of the options is chosen (i.e. the question is unanswered).</div>
+                            <div><b>Negative Marks</b></div><div><b>: -${negM}</b> In all other cases.</div>
+                        </div>
+                    </li>
+                </ul>`;
+            } else if(sec.type === 'MULTI') {
+                instText = `<ul class="qp-inst-list">
+                    <li>This section contains <b>${qCount}</b> questions.</li>
+                    <li>Each question has FOUR options (A), (B), (C) and (D). <b>ONE OR MORE THAN ONE</b> of these four option(s) is(are) correct answer(s).</li>
+                    <li>For each question, choose the option(s) corresponding to (all) the correct answer(s).</li>
+                    <li>Answer to each question will be evaluated according to the following marking scheme:
+                        <div class="qp-marks-grid">
+                            <div><b>Full Marks</b></div><div><b>: +${posM}</b> If only (all) the correct option(s) is(are) chosen.</div>
+                            <div><b>Partial Marks</b></div><div><b>: +1</b> For each correct option chosen, provided NO incorrect option is chosen.</div>
+                            <div><b>Zero Marks</b></div><div><b>: 0</b> If none of the options is chosen (i.e. the question is unanswered).</div>
+                            <div><b>Negative Marks</b></div><div><b>: -${negM}</b> In all other cases.</div>
+                        </div>
+                    </li>
+                </ul>`;
+            } else if(sec.type === 'NUMERICAL') {
+                instText = `<ul class="qp-inst-list">
+                    <li>This section contains <b>${qCount}</b> questions.</li>
+                    <li>The answer to each question is a <b>NUMERICAL VALUE</b>.</li>
+                    <li>For each question, enter the correct numerical value in the designated space.</li>
+                    <li>Answer to each question will be evaluated according to the following marking scheme:
+                        <div class="qp-marks-grid">
+                            <div><b>Full Marks</b></div><div><b>: +${posM}</b> If ONLY the correct numerical value is entered.</div>
+                            <div><b>Zero Marks</b></div><div><b>: 0</b> If the question is unanswered.</div>
+                            <div><b>Negative Marks</b></div><div><b>: -${negM}</b> In all other cases.</div>
+                        </div>
+                    </li>
+                </ul>`;
+            }
+            // ==============================================================
+            
+            let instDiv = document.createElement('div');
+            instDiv.className = 'qp-instructions';
+            instDiv.innerHTML = `<strong><i class="fas fa-info-circle"></i> SECTION INSTRUCTIONS:</strong> ${instText}`;
+            paperContainer.appendChild(instDiv);
+            
+            // Render Questions
+            processedQs.forEach(q => {
+                let qBlock = document.createElement('div');
+                qBlock.className = 'qp-q-block'; // The container we will turn into a box
+                
+                let qNum = document.createElement('div');
+                qNum.className = 'qp-q-num';
+                qNum.innerText = `Q.${q.displayNumber}`;
+                
+                let qContent = document.createElement('div');
+                qContent.className = 'qp-q-content';
+                
+                let qTextDiv = document.createElement('div');
+                qTextDiv.innerHTML = q.text;
+                qContent.appendChild(qTextDiv);
+                
+                let diagData = q.diagram || q.image; 
+                if (diagData) {
+                    let imgSrc = diagData.startsWith('data:image') ? diagData : `data:image/png;base64,${diagData}`;
+                    let imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'qp-img-wrapper';
+                    imgWrapper.innerHTML = `<img src="${imgSrc}">`;
+                    qContent.appendChild(imgWrapper);
+                }
+
+                if(q.type === 'SINGLE' || q.type === 'MULTI') {
+                    let optGrid = document.createElement('div');
+                    optGrid.className = 'qp-options-grid';
+                    let labels = ['(A)', '(B)', '(C)', '(D)'];
+                    
+                    if (q.options && Array.isArray(q.options)) {
+                        q.options.forEach((opt, oIdx) => {
+                            let optDiv = document.createElement('div');
+                            optDiv.innerHTML = `<span class="qp-opt-label">${labels[oIdx]}</span> ${opt}`;
+                            optGrid.appendChild(optDiv);
+                        });
+                    }
+                    qContent.appendChild(optGrid);
+                } else if (q.type === 'NUMERICAL') {
+                    let numDiv = document.createElement('div');
+                    numDiv.style.cssText = 'margin-top: 15px; font-weight: bold; font-family: monospace; font-size: 1.1rem;';
+                    numDiv.innerText = 'Answer: ____________________';
+                    qContent.appendChild(numDiv);
+                }
+
+                qBlock.appendChild(qNum);
+                qBlock.appendChild(qContent);
+                paperContainer.appendChild(qBlock);
+            });
+        });
     });
     
-    const modalBody = document.getElementById('modal-body');
-    modalBody.innerHTML = html;
-    
+    modalBody.appendChild(paperContainer);
     document.getElementById('app-modal').style.display = 'flex';
     
-    // Crucial: Re-render MathJax inside the modal!
     if (window.MathJax && window.MathJax.typesetPromise) {
         MathJax.typesetClear([modalBody]);
         MathJax.typesetPromise([modalBody]).catch(err => console.log(err));
