@@ -328,48 +328,68 @@ function updatePerformanceLogsUI() {
 
 window.viewPastLog = async function(index) {
     const log = performanceLogs[index];
+    if (!log) return;
     
-    // Fetch the split log chunks if not already in memory
-    if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
-        document.body.style.cursor = 'wait';
-        try {
-            let fullQuestions = [];
+    document.body.style.cursor = 'wait';
+    let extractedQs = [];
+
+    try {
+        // 1. If it's a new Multi-Doc log, fetch from chunks
+        if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
             const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
-            secSnapshot.forEach(doc => {
-                fullQuestions.push(...doc.data().questions);
-            });
-            log.allQuestions = fullQuestions;
-        } catch(e) {
-            console.error("Error fetching log chunks:", e);
+            
+            // Check if the snapshot exists before looping to prevent crashes
+            if (secSnapshot && typeof secSnapshot.forEach === 'function') {
+                secSnapshot.forEach(doc => {
+                    let d = doc.data();
+                    if(d && d.questions) extractedQs.push(...d.questions);
+                });
+            }
+            log.allQuestions = extractedQs;
+        } else {
+            // 2. Fallback for Older Logs (Pre-Chunking Era)
+            extractedQs = log.allQuestions || (log.testData && log.testData.questions ? log.testData.questions : []) || [];
         }
+        
         document.body.style.cursor = 'default';
-    }
 
-    // SAFETY NET: If the log is ancient or corrupted, stop here instead of crashing
-    if (!log.allQuestions || log.allQuestions.length === 0) {
-        alert("This log file is from an older version or could not be fully loaded.");
+        // 3. Ultimate Safety Net: Stop everything if no questions exist
+        if (!extractedQs || !Array.isArray(extractedQs) || extractedQs.length === 0) {
+            alert("This log file is from an older version or the database chunks are missing.");
+            return;
+        }
+
+        // 4. Lock in the Global State securely
+        allQuestions = extractedQs;
+        testData = log.testData || { title: log.title, questions: allQuestions };
+        userAnswers = log.userAnswers || {};
+        timeSpentOnQuestion = log.timeSpent || {};
+        
+        // 5. Reconstruct UI Tabs safely
+        sectionsData = [];
+        const grouped = {};
+        allQuestions.forEach(q => {
+            let subj = q.subject || 'General';
+            let type = q.type || 'SINGLE';
+            let secName = q.sectionName || type;
+            let key = subj + "|||" + type;
+            
+            if (!grouped[key]) grouped[key] = { subject: subj, name: secName, type: type, questions: [] };
+            grouped[key].questions.push(q);
+        });
+        
+        for (const key in grouped) sectionsData.push(grouped[key]);
+
+        // 6. Generate Report & Show Screen
+        generateBeastReport(false);
+        showScreen('screen-analysis');
+        switchAnalysisTab('overview', document.querySelector('.qz-nav-menu li:first-child'));
+
+    } catch (error) {
         document.body.style.cursor = 'default';
-        return;
+        console.error("Critical Error loading log:", error);
+        alert("Failed to load this performance log. The data might be corrupted.");
     }
-
-    testData = log.testData || { title: log.title, questions: log.allQuestions };
-    userAnswers = log.userAnswers || {};
-    timeSpentOnQuestion = log.timeSpent || {};
-    allQuestions = log.allQuestions;
-    
-    // Reconstruct UI tabs directly from allQuestions
-    sectionsData = [];
-    const grouped = {};
-    allQuestions.forEach(q => {
-        let key = q.subject + "|||" + q.type;
-        if (!grouped[key]) grouped[key] = { subject: q.subject, name: q.sectionName, type: q.type, questions: [] };
-        grouped[key].questions.push(q);
-    });
-    for (const key in grouped) sectionsData.push(grouped[key]);
-
-    generateBeastReport(false);
-    showScreen('screen-analysis');
-    switchAnalysisTab('overview', document.querySelector('.qz-nav-menu li:first-child'));
 };
 // Triggered when clicking "Attempt" on a specific test in the vault
 function attemptTest(index) {
