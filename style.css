@@ -906,3 +906,166 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
         display: none !important;
     }
 }
+/* ================= ANVESHAM ANALYSIS UI OVERRIDES ================= */
+
+/* 1. Soften the main cards and add premium floating shadows */
+.qz-card {
+    background: #ffffff;
+    border-radius: 16px !important; /* Replaces sharp rectangles with smooth curves */
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0,0,0,0.02) !important;
+    padding: 25px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qz-card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), 0 3px 6px rgba(0,0,0,0.03) !important;
+}
+
+/* 2. Upgrade the 6-Grid Metric Boxes */
+.qz-metric-box {
+    background: linear-gradient(145deg, #ffffff, #f8fafc) !important;
+    border-radius: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 20px !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Make the metric numbers massive and bold */
+.qz-metric-box .metric-body .val {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -1px;
+}
+
+/* 3. Soften the Subject Icons in the Performance Table */
+.subj-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important; /* Squircles instead of sharp squares */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    margin-right: 10px;
+}
+
+/* 4. Upgrade the Sidebar Menu Hover Vibe */
+.qz-nav-menu li {
+    border-radius: 10px !important;
+    margin-bottom: 5px !important;
+    transition: all 0.2s ease !important;
+}
+
+.qz-nav-menu li.active {
+    background: rgba(56, 189, 248, 0.1) !important;
+    color: #0284C7 !important;
+    border-right: 4px solid #38BDF8 !important;
+}
+
+.qz-nav-menu li:hover:not(.active) {
+    background: #f1f5f9 !important;
+    transform: translateX(4px);
+}
+/* ================= FIX: ICON RECTANGLES & UI ALIGNMENT ================= */
+
+/* 1. The Shield: Stop 'Inter' font from breaking FontAwesome */
+.fas, .far, .fab, .fa {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important; /* FA Solid REQUIRES 900 to render */
+    background: transparent !important;
+    border: none !important;
+}
+
+/* 2. Fix the 6-Grid Metric Box Headers */
+.metric-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    margin-bottom: 10px !important;
+}
+
+.metric-head i {
+    font-size: 1.2rem !important;
+}
+
+/* 3. Perfect the Subject Icons in the Table */
+.subj-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important; /* Stops the box from squishing */
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    margin-right: 12px;
+}
+
+.subj-icon i {
+    color: white !important;
+    font-size: 1.1rem !important;
+    margin: 0 !important; /* Removes any weird spacing pushing the icon out */
+}
+
+/* 4. Fix Sidebar Navigation Alignment */
+.qz-nav-menu li {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 15px !important;
+}
+
+.qz-nav-menu li i:not(.arrow) {
+    font-size: 1.1rem !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+/* ================= FIX: ANVESHAM LOGO OVERFLOW ================= */
+.qz-logo-area {
+    width: 100% !important;
+    padding: 0 5px !important;
+    box-sizing: border-box !important;
+}
+
+.qz-logo-area span {
+    font-size: 0.55rem !important; /* Scales text down to fit the narrow ribbon */
+    letter-spacing: 0px !important; /* Removes the extra wide spacing */
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+    word-wrap: break-word !important; /* Forces it to stay inside bounds */
+}
+
+.qz-logo-area .brand-logo i {
+    font-size: 1.5rem !important; /* Keeps the glowing atom icon decently sized */
+}
+/* ================= RE-BALANCE METRICS GRID FOR 5 BOXES ================= */
+.qz-metrics-6grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+    gap: 15px !important;
+}
+
+/* Make the last two boxes slightly wider to fill the empty space perfectly */
+.qz-metrics-6grid .qz-metric-box:nth-last-child(1),
+.qz-metrics-6grid .qz-metric-box:nth-last-child(2) {
+    flex-grow: 1;
+}
+/* ================= FIX: BUBBLE ICON ALIGNMENT ================= */
+.q-bubble-grid i {
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
