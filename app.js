@@ -300,32 +300,45 @@ window.deleteTestFromVault = function(index) {
 };
 // ================= PERFORMANCE LOGS LOGIC =================
 function updatePerformanceLogsUI() {
-    const list = document.getElementById('db-results-list');
+    const list = document.getElementById('db-logs-list'); // Make sure this matches your HTML ID!
+    if (!list) return;
+    
     list.innerHTML = '';
-
+    
     if (performanceLogs.length === 0) {
         list.innerHTML = `<li class="db-item-glass empty-state">No past attempts found.</li>`;
         return;
     }
 
-    // Loop through past attempts and build the UI
     performanceLogs.forEach((log, index) => {
+        const title = log.title || 'Practice Test';
+        const score = log.score !== undefined ? log.score : '--';
+        const max = log.maxScore !== undefined ? log.maxScore : '--';
+        const date = log.date || 'Unknown Date';
+
         const li = document.createElement('li');
         li.className = 'db-item-glass';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+
         li.innerHTML = `
-            <div>
-                <strong style="display:block; margin-bottom: 5px; color: white;">${log.title}</strong>
-                <span style="font-size: 0.8rem; color: #94a3b8;">Score: <span class="text-green" style="font-weight:bold;">${log.score}</span>/${log.maxScore} | Acc: ${log.accuracy}%</span>
-                <div style="font-size: 0.7rem; color: #64748b; margin-top: 5px;"><i class="far fa-clock"></i> ${log.date}</div>
+            <div style="flex:1;">
+                <strong style="display:block; margin-bottom: 5px; color: white;">${title}</strong>
+                <span style="font-size: 0.8rem; color: #94a3b8;">Score: ${score}/${max} &nbsp;|&nbsp; ${date}</span>
             </div>
-            <button class="btn-glass-sm" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: #a78bfa;" onclick="viewPastLog(${index})">
-                <i class="fas fa-chart-pie"></i> View
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-glass-sm" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="deletePastLog(${index})">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="btn-glass-sm" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;" onclick="viewPastLog(${index})">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </div>
         `;
         list.appendChild(li);
     });
 }
-
 window.viewPastLog = async function(index) {
     const log = performanceLogs[index];
     if (!log) return;
@@ -389,6 +402,31 @@ window.viewPastLog = async function(index) {
         document.body.style.cursor = 'default';
         console.error("Critical Error loading log:", error);
         alert("Failed to load this performance log. The data might be corrupted.");
+    }
+};
+// NEW: Delete a Past Performance Log
+window.deletePastLog = async function(index) {
+    if (!confirm("Are you sure you want to delete this performance log? This cannot be undone.")) return;
+
+    const log = performanceLogs[index];
+    
+    try {
+        // 1. If user is logged in, delete the main document from Firebase
+        if (currentUser && log.docId) {
+            await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).delete();
+            // Note: We delete the parent document. The chunks become invisible orphans, 
+            // keeping the deletion lightning fast without looping through subcollections!
+        }
+        
+        // 2. Remove it from the local array
+        performanceLogs.splice(index, 1);
+        
+        // 3. Re-render the UI
+        updatePerformanceLogsUI();
+        
+    } catch (error) {
+        console.error("Error deleting log:", error);
+        alert("Failed to delete the log. Please check your connection.");
     }
 };
 // Triggered when clicking "Attempt" on a specific test in the vault
