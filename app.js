@@ -1061,25 +1061,40 @@ if (isNewSubmission) {
 
 
 
-    // 4. Qs by Qs Bubbles
+// 4. Qs by Qs Bubbles (Grouped by Subject)
     let qGridHtml = '';
-    sectionsData.forEach((sec, idx) => {
+    
+    // We already have uniqueSubjects defined earlier, so we loop through that!
+    uniqueSubjects.forEach((subj, idx) => {
         let color = subjColors[idx % 3];
         let icon = subjIcons[idx % 3];
-        qGridHtml += `<div class="q-section-block">
-            <div style="color:${color}; font-weight:700; font-size:1.1rem; margin-bottom: 15px;"><i class="fas ${icon}"></i> ${sec.name.split(' ')[0]}</div>
-            <div class="q-bubble-grid">`;
         
-        allQuestions.filter(q => q.secIndex === idx).forEach(q => {
-            let mark = '<i class="fas fa-ban text-muted"></i>';
-            let bClass = 'unattempted';
-            if(q.finalStatus === 'correct') { mark = '<i class="fas fa-check text-green"></i>'; bClass = 'correct'; }
-            if(q.finalStatus === 'wrong') { mark = '<i class="fas fa-times text-red"></i>'; bClass = 'wrong'; }
+        qGridHtml += `<div class="q-section-block" style="margin-bottom: 30px; background: white; padding: 25px; border-radius: 16px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);">
+            <div style="color:${color}; font-weight:800; font-size:1.2rem; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; display:flex; align-items:center; gap:10px;">
+                <div class="subj-icon" style="background:${color}; width: 36px !important; height: 36px !important;"><i class="fas ${icon}" style="font-size:1rem !important;"></i></div> 
+                ${subj}
+            </div>
+            <div class="q-bubble-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 15px;">`;
+        
+        // Filter all questions that belong ONLY to this subject
+        allQuestions.filter(q => q.subject === subj).forEach(q => {
+            let mark = '<i class="fas fa-minus"></i>';
+            let bg = '#F8FAFC'; let border = '#E2E8F0'; let text = '#94A3B8';
+            
+            // Note: We include 'partial' here so Multi-Correct partial marks show as green!
+            if(q.finalStatus === 'correct' || q.finalStatus === 'partial') { 
+                mark = '<i class="fas fa-check"></i>'; 
+                bg = '#D1FAE5'; border = '#10B981'; text = '#059669'; 
+            }
+            if(q.finalStatus === 'wrong') { 
+                mark = '<i class="fas fa-times"></i>'; 
+                bg = '#FEE2E2'; border = '#EF4444'; text = '#DC2626'; 
+            }
             
             qGridHtml += `
-                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    <div style="font-size:0.8rem; font-weight:600; color:var(--qz-text-muted);">${q.displayNumber}</div>
-                    <div style="width: 32px; height: 32px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bClass === 'correct' ? '#D1FAE5' : (bClass === 'wrong' ? '#FEE2E2' : '#F1F5F9')}; color: ${bClass === 'correct' ? '#10B981' : (bClass === 'wrong' ? '#EF4444' : '#94A3B8')}; border: 1px solid ${bClass === 'correct' ? '#34D399' : (bClass === 'wrong' ? '#F87171' : '#CBD5E1')};">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#64748B;">Q${q.displayNumber}</div>
+                    <div style="width: 38px; height: 38px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bg}; color: ${text}; border: 2px solid ${border}; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="${q.sectionName}">
                         ${mark}
                     </div>
                 </div>
@@ -1088,7 +1103,6 @@ if (isNewSubmission) {
         qGridHtml += `</div></div>`;
     });
     document.getElementById('qbyq-container').innerHTML = qGridHtml;
-
     // 5. Render exact Quizrr Stacked Potential Chart
     renderPotentialChart(totals);
 }
