@@ -1012,19 +1012,28 @@ allQuestions.forEach((q) => {
     let accuracy = totals.attempted > 0 ? ((totals.correct / totals.attempted) * 100).toFixed(2) : "0.00";
     document.getElementById('res-accuracy').innerText = `${accuracy}%`;
 // ================= SAFE SUBMISSION ENGINE =================
+// ================= SAFE SUBMISSION ENGINE =================
     if (isNewSubmission) {
-        // Show loading state on the button
         let submitBtn = document.getElementById('btn-submit');
-        if(submitBtn) submitBtn.innerText = "Saving Analysis...";
+        
+        // 1. PREVENT DOUBLE SUBMISSIONS: Stop the function if already saving
+        if (submitBtn) {
+            if (submitBtn.disabled) return; 
+            submitBtn.disabled = true; // Lock the button!
+            submitBtn.innerText = "Saving Analysis...";
+        }
 
-     const newLogData = {
-            title: testData.title || "Practice Test",
+        // 2. STRIP THE HEAVY DATA: Remove the massive question array from the base testData
+        let safeTestData = JSON.parse(JSON.stringify(testData));
+        delete safeTestData.questions; // This saves us from the 1MB Firebase crash!
+
+        const newLogData = {
+            title: safeTestData.title || "Practice Test",
             date: new Date().toLocaleString(),
             score: totals.score,
             maxScore: totals.max,
             accuracy: accuracy,
-            // 🔥 THE FIX: Added testData and sectionsData back so the UI knows how to render!
-            testData: JSON.parse(JSON.stringify(testData)),
+            testData: safeTestData, // Now it's lightweight!
             sectionsData: JSON.parse(JSON.stringify(sectionsData)),
             userAnswers: JSON.parse(JSON.stringify(userAnswers)),
             timeSpent: JSON.parse(JSON.stringify(timeSpentOnQuestion)),
@@ -1036,11 +1045,11 @@ allQuestions.forEach((q) => {
             .then(async (docRef) => {
                 newLogData.docId = docRef.id;
                 
-                // SLICE THE DATA TO AVOID FIREBASE SIZE LIMIT CRASHES!
+                // 3. SLICE INTO SMALLER BATCHES (10 Qs per chunk to be ultra-safe)
                 let safeQuestions = JSON.parse(JSON.stringify(allQuestions));
                 let chunks = [];
-                for (let i = 0; i < safeQuestions.length; i += 15) {
-                    chunks.push(safeQuestions.slice(i, i + 15));
+                for (let i = 0; i < safeQuestions.length; i += 10) {
+                    chunks.push(safeQuestions.slice(i, i + 10));
                 }
                 
                 for (let i = 0; i < chunks.length; i++) {
@@ -1054,17 +1063,28 @@ allQuestions.forEach((q) => {
                 performanceLogs.push(newLogData);
                 updatePerformanceLogsUI();
                 
-                if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+                // Unlock button when done
+                if(submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+                }
             }).catch(err => {
                 console.error("Error saving log:", err);
-                if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+                if(submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+                }
+                alert("Error saving your analysis to the cloud. Check your connection.");
             });
         } else {
             // GUEST MODE
             newLogData.allQuestions = JSON.parse(JSON.stringify(allQuestions));
             performanceLogs.push(newLogData);
             updatePerformanceLogsUI();
-            if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+            if(submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+            }
         }
     }
 // ================= CORRECTED: SAVE TO LOGS =================
