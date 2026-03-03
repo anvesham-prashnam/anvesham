@@ -979,22 +979,7 @@ allQuestions.forEach((q) => {
     }
     document.getElementById('performance-tbody').innerHTML = perfHtml;
 
-    // 3. Difficulty Table
-    let diffHtml = '';
-    ['Easy', 'Moderate', 'Tough'].forEach(d => {
-        let s = diffStats[d];
-        if(s.total > 0) {
-            diffHtml += `
-                <tr>
-                    <td style="text-align:left; padding-left: 30px;"><strong>${d}</strong></td>
-                    <td>${s.correct}<span style="font-size:0.75rem; color:var(--qz-text-muted);">/${s.total} Qs</span></td>
-                    <td>${s.wrong}<span style="font-size:0.75rem; color:var(--qz-text-muted);">/${s.total} Qs</span></td>
-                    <td>${s.unattempted}<span style="font-size:0.75rem; color:var(--qz-text-muted);">/${s.total} Qs</span></td>
-                </tr>
-            `;
-        }
-    });
-    document.getElementById('difficulty-tbody').innerHTML = diffHtml;
+
 
     // 4. Qs by Qs Bubbles
     let qGridHtml = '';
