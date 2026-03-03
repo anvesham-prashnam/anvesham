@@ -300,7 +300,8 @@ window.deleteTestFromVault = function(index) {
 };
 // ================= PERFORMANCE LOGS LOGIC =================
 function updatePerformanceLogsUI() {
-    const list = document.getElementById('db-logs-list'); // Make sure this matches your HTML ID!
+    // 🚨 FIXED ID: We are using 'db-results-list' now to match your HTML perfectly!
+    const list = document.getElementById('db-results-list'); 
     if (!list) return;
     
     list.innerHTML = '';
@@ -325,7 +326,7 @@ function updatePerformanceLogsUI() {
         li.innerHTML = `
             <div style="flex:1;">
                 <strong style="display:block; margin-bottom: 5px; color: white;">${title}</strong>
-                <span style="font-size: 0.8rem; color: #94a3b8;">Score: ${score}/${max} &nbsp;|&nbsp; ${date}</span>
+                <span style="font-size: 0.8rem; color: #94a3b8;">Score: <span class="text-green" style="font-weight:bold;">${score}</span>/${max} &nbsp;|&nbsp; ${date}</span>
             </div>
             <div style="display: flex; gap: 10px;">
                 <button class="btn-glass-sm" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="deletePastLog(${index})">
@@ -1026,8 +1027,12 @@ allQuestions.forEach((q) => {
     
     let accuracy = totals.attempted > 0 ? ((totals.correct / totals.attempted) * 100).toFixed(2) : "0.00";
     document.getElementById('res-accuracy').innerText = `${accuracy}%`;
-// ================= NEW: SAVE SNAPSHOT TO LOGS =================
-if (isNewSubmission) {
+// ================= SAFE SUBMISSION ENGINE =================
+    if (isNewSubmission) {
+        // Show loading state on the button
+        let submitBtn = document.getElementById('btn-submit');
+        if(submitBtn) submitBtn.innerText = "Saving Analysis...";
+
         const newLogData = {
             title: testData.title || "Practice Test",
             date: new Date().toLocaleString(),
@@ -1040,33 +1045,39 @@ if (isNewSubmission) {
         };
 
         if (currentUser) {
-            // Save base stats first
             db.collection('users').doc(currentUser.uid).collection('logs').add(newLogData)
             .then(async (docRef) => {
                 newLogData.docId = docRef.id;
                 
-                // Group the questions by subject and save them in safe chunks
-                let logSections = {};
-                allQuestions.forEach(q => {
-                    if(!logSections[q.subject]) logSections[q.subject] = [];
-                    logSections[q.subject].push(q);
-                });
+                // SLICE THE DATA TO AVOID FIREBASE SIZE LIMIT CRASHES!
+                let safeQuestions = JSON.parse(JSON.stringify(allQuestions));
+                let chunks = [];
+                for (let i = 0; i < safeQuestions.length; i += 15) {
+                    chunks.push(safeQuestions.slice(i, i + 15));
+                }
                 
-                for (const subj in logSections) {
+                for (let i = 0; i < chunks.length; i++) {
                     await db.collection('users').doc(currentUser.uid).collection('logs').doc(docRef.id).collection('sections').add({
-                        subject: subj,
-                        questions: JSON.parse(JSON.stringify(logSections[subj]))
+                        chunkIndex: i,
+                        questions: chunks[i]
                     });
                 }
                 
-                newLogData.allQuestions = JSON.parse(JSON.stringify(allQuestions)); 
+                newLogData.allQuestions = safeQuestions; 
                 performanceLogs.push(newLogData);
                 updatePerformanceLogsUI();
-            }).catch(err => console.error("Error saving log:", err));
+                
+                if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+            }).catch(err => {
+                console.error("Error saving log:", err);
+                if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
+            });
         } else {
+            // GUEST MODE
             newLogData.allQuestions = JSON.parse(JSON.stringify(allQuestions));
             performanceLogs.push(newLogData);
             updatePerformanceLogsUI();
+            if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Submit Exam';
         }
     }
 // ================= CORRECTED: SAVE TO LOGS =================
