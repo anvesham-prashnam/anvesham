@@ -348,11 +348,10 @@ window.viewPastLog = async function(index) {
     let extractedQs = [];
 
     try {
-        // 1. If it's a new Multi-Doc log, fetch from chunks
+        // 1. If it's a new Multi-Doc log, fetch the 15-question chunks from Firebase
         if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
             const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
             
-            // Check if the snapshot exists before looping to prevent crashes
             if (secSnapshot && typeof secSnapshot.forEach === 'function') {
                 secSnapshot.forEach(doc => {
                     let d = doc.data();
@@ -361,40 +360,25 @@ window.viewPastLog = async function(index) {
             }
             log.allQuestions = extractedQs;
         } else {
-            // 2. Fallback for Older Logs (Pre-Chunking Era)
-            extractedQs = log.allQuestions || (log.testData && log.testData.questions ? log.testData.questions : []) || [];
+            // 2. Fallback for Guest Mode or currently in-memory logs
+            extractedQs = log.allQuestions || [];
         }
         
         document.body.style.cursor = 'default';
 
-        // 3. Ultimate Safety Net: Stop everything if no questions exist
-        if (!extractedQs || !Array.isArray(extractedQs) || extractedQs.length === 0) {
-            alert("This log file is from an older version or the database chunks are missing.");
+        if (!extractedQs || extractedQs.length === 0) {
+            alert("This log file is corrupted or missing data. Please delete it.");
             return;
         }
 
-        // 4. Lock in the Global State securely
+        // 3. Lock in the Global State securely
         allQuestions = extractedQs;
         testData = log.testData || { title: log.title, questions: allQuestions };
         userAnswers = log.userAnswers || {};
         timeSpentOnQuestion = log.timeSpent || {};
-        
-        // 5. Reconstruct UI Tabs safely
-        sectionsData = [];
-        const grouped = {};
-        allQuestions.forEach(q => {
-            let subj = q.subject || 'General';
-            let type = q.type || 'SINGLE';
-            let secName = q.sectionName || type;
-            let key = subj + "|||" + type;
-            
-            if (!grouped[key]) grouped[key] = { subject: subj, name: secName, type: type, questions: [] };
-            grouped[key].questions.push(q);
-        });
-        
-        for (const key in grouped) sectionsData.push(grouped[key]);
+        sectionsData = log.sectionsData || [];
 
-        // 6. Generate Report & Show Screen
+        // 4. Generate Report & Show Screen
         generateBeastReport(false);
         showScreen('screen-analysis');
         switchAnalysisTab('overview', document.querySelector('.qz-nav-menu li:first-child'));
@@ -1033,12 +1017,15 @@ allQuestions.forEach((q) => {
         let submitBtn = document.getElementById('btn-submit');
         if(submitBtn) submitBtn.innerText = "Saving Analysis...";
 
-        const newLogData = {
+     const newLogData = {
             title: testData.title || "Practice Test",
             date: new Date().toLocaleString(),
             score: totals.score,
             maxScore: totals.max,
             accuracy: accuracy,
+            // 🔥 THE FIX: Added testData and sectionsData back so the UI knows how to render!
+            testData: JSON.parse(JSON.stringify(testData)),
+            sectionsData: JSON.parse(JSON.stringify(sectionsData)),
             userAnswers: JSON.parse(JSON.stringify(userAnswers)),
             timeSpent: JSON.parse(JSON.stringify(timeSpentOnQuestion)),
             isMultiDoc: true 
