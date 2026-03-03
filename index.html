@@ -299,9 +299,9 @@
         <div class="qz-layout">
             
             <nav class="qz-dark-strip">
-                <div class="qz-logo-area">
-                    <div class="qz-logo-icon">Q</div>
-                    <span style="font-size: 0.7rem; font-weight: 700;">Quizrr</span>
+                <div class="qz-logo-area" style="display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 10px;">
+                    <div class="brand-logo" style="font-size: 1.8rem; color: #38BDF8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);"><i class="fas fa-atom"></i></div>
+                    <span style="font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; color: white;">ANVESHAM</span>
                 </div>
                 <ul class="qz-dark-menu">
                     <li onclick="showScreen('screen-dashboard')"><i class="fas fa-home"></i><span>Home</span></li>
@@ -317,16 +317,13 @@
                     <p id="qz-sidebar-title">JEE Advanced Full Test</p>
                 </div>
                 
-                <div class="qz-toggle-pill">
-                    <div class="active">Personal <i class="fas fa-check"></i></div>
-                    <div>Comparative</div>
-                </div>
+              
 
                 <ul class="qz-nav-menu">
                     <li class="active" onclick="switchAnalysisTab('overview', this)"><i class="fas fa-border-all"></i> Overview <i class="fas fa-chevron-right arrow"></i></li>
                     <li onclick="switchAnalysisTab('performance', this)"><i class="fas fa-chart-line"></i> Performance Analysis <i class="fas fa-chevron-right arrow"></i></li>
                     <li onclick="switchAnalysisTab('potential', this)"><i class="fas fa-level-up-alt"></i> Score Potential <i class="fas fa-chevron-right arrow"></i></li>
-                    <li onclick="switchAnalysisTab('difficulty', this)"><i class="fas fa-layer-group"></i> Difficulty Analysis <i class="fas fa-chevron-right arrow"></i></li>
+                  
                     <li onclick="switchAnalysisTab('qbyq', this)"><i class="fas fa-tasks"></i> Qs by Qs Analysis <i class="fas fa-chevron-right arrow"></i></li>
                 </ul>
             </aside>
@@ -343,7 +340,6 @@
                         <div class="qz-card score-hero-card">
                             <div style="display: flex; justify-content: space-between; width: 100%;">
                                 <h3 class="qz-card-title">Overall Score</h3>
-                                <span class="qz-badge-air">AIR PREDICTOR</span>
                             </div>
                             <div class="score-massive-display">
                                 <span id="res-total-score" class="score-val">0</span>
@@ -354,10 +350,7 @@
                         </div>
 
                         <div class="qz-metrics-6grid">
-                            <div class="qz-metric-box">
-                                <div class="metric-head"><i class="fas fa-trophy text-purple"></i> LEADERBOARD RANK <i class="fas fa-info-circle info-icon-tiny"></i></div>
-                                <div class="metric-body"><span class="val">--</span><span class="max">/--</span></div>
-                            </div>
+                           
                             <div class="qz-metric-box">
                                 <div class="metric-head"><i class="fas fa-bullseye text-purple"></i> QS ATTEMPTED <i class="fas fa-info-circle info-icon-tiny"></i></div>
                                 <div class="metric-body"><span class="val" id="res-attempted">0</span><span class="max">/0</span></div>
@@ -417,17 +410,7 @@
                     </div>
                 </div>
 
-                <div id="tab-difficulty" class="analysis-view">
-                    <div class="qz-card">
-                        <h3 class="qz-card-title">Overall Analysis</h3>
-                        <table class="qz-table">
-                            <thead>
-                                <tr><th>Difficulty</th><th class="text-green">Attempted Correct</th><th class="text-red">Attempted Wrong</th><th>Not Attempted</th></tr>
-                            </thead>
-                            <tbody id="difficulty-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
+          
 
                 <div id="tab-qbyq" class="analysis-view">
                     <div class="qz-card">
