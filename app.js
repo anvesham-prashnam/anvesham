@@ -58,10 +58,15 @@ auth.onAuthStateChanged((user) => {
             updateVaultUI();
         });
 
-        // Fetch User's Performance Logs
+       // Fetch User's Performance Logs
         db.collection('users').doc(user.uid).collection('logs').get().then((querySnapshot) => {
             performanceLogs = [];
-            querySnapshot.forEach((doc) => performanceLogs.push(doc.data()));
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                // CRITICAL FIX: We must capture the database ID so we can find the chunks later!
+                data.docId = doc.id; 
+                performanceLogs.push(data);
+            });
             updatePerformanceLogsUI();
         });
         // ==============================================================
@@ -327,18 +332,29 @@ window.viewPastLog = async function(index) {
     // Fetch the split log chunks if not already in memory
     if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
         document.body.style.cursor = 'wait';
-        let fullQuestions = [];
-        const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
-        secSnapshot.forEach(doc => {
-            fullQuestions.push(...doc.data().questions);
-        });
-        log.allQuestions = fullQuestions;
+        try {
+            let fullQuestions = [];
+            const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
+            secSnapshot.forEach(doc => {
+                fullQuestions.push(...doc.data().questions);
+            });
+            log.allQuestions = fullQuestions;
+        } catch(e) {
+            console.error("Error fetching log chunks:", e);
+        }
         document.body.style.cursor = 'default';
     }
 
+    // SAFETY NET: If the log is ancient or corrupted, stop here instead of crashing
+    if (!log.allQuestions || log.allQuestions.length === 0) {
+        alert("This log file is from an older version or could not be fully loaded.");
+        document.body.style.cursor = 'default';
+        return;
+    }
+
     testData = log.testData || { title: log.title, questions: log.allQuestions };
-    userAnswers = log.userAnswers;
-    timeSpentOnQuestion = log.timeSpent;
+    userAnswers = log.userAnswers || {};
+    timeSpentOnQuestion = log.timeSpent || {};
     allQuestions = log.allQuestions;
     
     // Reconstruct UI tabs directly from allQuestions
