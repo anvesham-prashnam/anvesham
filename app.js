@@ -1200,12 +1200,20 @@ allQuestions.forEach((q) => {
                 ${subj}
             </div>`;
 
-        // Inner Grouping: Group by Section Type (SINGLE, MULTI, NUMERICAL)
+// Inner Grouping: Group by Section Type (SINGLE, MULTI, NUMERICAL)
         let subjQs = allQuestions.filter(q => q.subject === subj);
         let uniqueTypes = [...new Set(subjQs.map(q => q.type))];
 
+        // 🔥 THE FIX 1: Force sections into standard JEE Order (Single -> Multi -> Numerical)
+        const typePriority = { 'SINGLE': 1, 'MULTI': 2, 'NUMERICAL': 3 };
+        uniqueTypes.sort((a, b) => (typePriority[a] || 4) - (typePriority[b] || 4));
+
         uniqueTypes.forEach(type => {
             let typeQs = subjQs.filter(q => q.type === type);
+            
+            // 🔥 THE FIX 2: Force the question bubbles to be mathematically sorted (1, 2, 3...)
+            typeQs.sort((a, b) => a.displayNumber - b.displayNumber);
+            
             let secName = typeQs[0].sectionName || type;
             
             // Assign custom colors based on Section Type
