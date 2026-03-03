@@ -1502,7 +1502,7 @@ function openQuestionPaper() {
         MathJax.typesetPromise([modalBody]).catch(err => console.log(err));
     }
 }
-let testVault = []; // Temporary storage until we add Firebase
+
 let performanceLogs = []; // NEW: Stores past attempts
 let testData = null;
 let allQuestions = [];
