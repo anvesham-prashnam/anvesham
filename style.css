@@ -1117,3 +1117,73 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     height: 45px;
     border: 2px solid rgba(56, 189, 248, 0.6);
 }
+/* ================= PREMIUM SOLUTIONS VIEWER CSS ================= */
+.sol-opt-row { 
+    padding: 16px 24px; 
+    border: 1px solid #E2E8F0; 
+    border-radius: 12px; 
+    background: #FFFFFF; 
+    display: flex; 
+    align-items: center; 
+    gap: 18px; 
+    font-weight: 500; 
+    font-size: 1.05rem; 
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+/* Soft Pastel Backgrounds for Correct/Wrong */
+.sol-opt-row.correct { 
+    border: 2px solid #10B981; 
+    background: #F0FDF4; 
+}
+.sol-opt-row.wrong { 
+    border: 2px solid #EF4444; 
+    background: #FEF2F2; 
+}
+
+/* The Circular A/B/C/D Letters */
+.sol-opt-letter {
+    width: 36px; height: 36px; 
+    min-width: 36px;
+    border-radius: 50%; 
+    display: flex; justify-content: center; align-items: center; 
+    background: #F1F5F9; color: #475569; 
+    font-weight: 800; font-size: 0.95rem;
+    border: 1px solid #CBD5E1;
+}
+.sol-opt-row.correct .sol-opt-letter { background: #10B981; color: white; border-color: #10B981; }
+.sol-opt-row.wrong .sol-opt-letter { background: #EF4444; color: white; border-color: #EF4444; }
+
+/* The Floating Badges (e.g., "Correct ✔") */
+.sol-opt-badge {
+    position: absolute; right: 20px; top: -12px;
+    padding: 4px 14px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    display: flex; align-items: center; gap: 6px;
+    letter-spacing: 0.5px;
+}
+.sol-opt-badge.correct { background: #10B981; color: white; }
+.sol-opt-badge.wrong { background: #EF4444; color: white; }
+
+/* The Palette Bubbles (Quizrr Style) */
+.sol-bubble { 
+    width: 42px; height: 42px; 
+    border-radius: 8px; /* Soft squares instead of circles */
+    display: flex; justify-content: center; align-items: center; 
+    font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; 
+}
+.sol-bubble.correct { background: #D1FAE5; color: #065F46; }
+.sol-bubble.wrong { background: #FEE2E2; color: #991B1B; }
+.sol-bubble.skipped { background: #F1F5F9; color: #64748B; }
+.sol-bubble.active { background: #0F172A; color: white; transform: scale(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+
+/* The Status Pill */
+.sol-status-pill {
+    display: inline-block; padding: 6px 16px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 25px;
+}
