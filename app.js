@@ -987,6 +987,10 @@ let uniqueSubjects = [...new Set(allQuestions.map(q => q.subject))];
         };
     });
 allQuestions.forEach((q) => {
+// 🔥 NEW: Capture the Marked for Review state permanently
+        if (isNewSubmission) {
+            q.isMarked = (questionStates[q.globalIndex] === 3 || questionStates[q.globalIndex] === 4);
+        }
         totals.max += q.posMarks;
         sectionStats[q.subject].max += q.posMarks; // Fixed crash bug here!
         sectionStats[q.subject].total++;
@@ -1216,7 +1220,7 @@ allQuestions.forEach((q) => {
             
             let secName = typeQs[0].sectionName || type;
             
-            // Assign custom colors based on Section Type
+// Assign custom colors based on Section Type
             let typeColor = type === 'SINGLE' ? '#10B981' : (type === 'MULTI' ? '#F59E0B' : '#3B82F6');
             let typeIcon = type === 'SINGLE' ? 'fa-dot-circle' : (type === 'MULTI' ? 'fa-check-square' : 'fa-keyboard');
 
@@ -1228,6 +1232,7 @@ allQuestions.forEach((q) => {
                     <div class="q-bubble-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 18px;">
             `;
 
+            // 🔥 CORRECTED: Only ONE loop here now!
             typeQs.forEach(q => {
                 let mark = '<i class="fas fa-minus"></i>';
                 let bg = '#F8FAFC'; let border = '#E2E8F0'; let text = '#94A3B8';
@@ -1240,11 +1245,15 @@ allQuestions.forEach((q) => {
                     bg = '#FEE2E2'; border = '#EF4444'; text = '#DC2626';
                 }
 
+                // The Purple Bookmark Badge for Marked Questions
+                let markedBadge = q.isMarked ? `<div style="position:absolute; top:-5px; right:-5px; background:#8B5CF6; color:white; width:18px; height:18px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:0.6rem; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Marked for Review"><i class="fas fa-bookmark"></i></div>` : '';
+
                 qGridHtml += `
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; cursor: pointer; transition: 0.2s; transform-origin: center;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="openSolutions(${q.globalIndex})">
                         <div style="font-size:0.8rem; font-weight:800; color:#64748B;">Q${q.displayNumber}</div>
-                        <div style="width: 42px; height: 42px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bg}; color: ${text}; border: 2px solid ${border}; box-shadow: 0 3px 8px rgba(0,0,0,0.06); font-size: 1.1rem; line-height: 1;" title="${q.sectionName}">
+                        <div style="position: relative; width: 42px; height: 42px; border-radius: 50%; display:flex; justify-content:center; align-items:center; background: ${bg}; color: ${text}; border: 2px solid ${border}; box-shadow: 0 3px 8px rgba(0,0,0,0.06); font-size: 1.1rem; line-height: 1;" title="View Solution">
                             ${mark}
+                            ${markedBadge}
                         </div>
                     </div>
                 `;
@@ -1257,9 +1266,7 @@ allQuestions.forEach((q) => {
     qGridHtml += `</div>`; 
     document.getElementById('qbyq-container').innerHTML = qGridHtml;
     // 5. Render exact Quizrr Stacked Potential Chart
-    renderPotentialChart(totals);
-}
-
+    renderPotentialChart(totals);}
 function renderPotentialChart(totals) {
     const ctx = document.getElementById('potentialChart').getContext('2d');
     if (potentialChartInstance) potentialChartInstance.destroy();
@@ -1577,3 +1584,174 @@ function openQuestionPaper() {
         MathJax.typesetPromise([modalBody]).catch(err => console.log(err));
     }
 }
+// ================= THE SOLUTIONS VIEWER ENGINE =================
+let currentSolIndex = 0;
+
+window.openSolutions = function(startIndex = 0) {
+    showScreen('screen-solutions');
+    document.getElementById('sol-test-title').innerText = testData.title || 'Test Solutions';
+    currentSolIndex = startIndex;
+    renderSolutionPalette();
+    loadSolutionQuestion(currentSolIndex);
+};
+
+function loadSolutionQuestion(index) {
+    currentSolIndex = index;
+    const q = allQuestions[index];
+    const uAns = userAnswers[index];
+    
+    // 1. Highlight Active Subject Tab
+    let uniqueSubjects = [...new Set(allQuestions.map(qs => qs.subject))];
+    let tabsHtml = '';
+    uniqueSubjects.forEach(subj => {
+        let isActive = (subj === q.subject) ? 'color: #38BDF8; border-bottom: 3px solid #38BDF8;' : 'color: #94A3B8; border-bottom: 3px solid transparent;';
+        tabsHtml += `<div style="padding-bottom: 5px; font-weight: 800; font-size: 1.05rem; cursor: pointer; ${isActive}">${subj}</div>`;
+    });
+    document.getElementById('sol-subject-tabs').innerHTML = tabsHtml;
+
+    // 2. Set Question Header
+    document.getElementById('sol-q-header').innerHTML = `
+        <span><i class="fas fa-layer-group"></i> ${q.sectionName}</span>
+        <span>Q.${q.displayNumber} &nbsp;|&nbsp; +${q.posMarks} / -${q.negMarks}</span>
+    `;
+
+// 3. Set Status Banner (Sleek Pill Style + Marked Tag)
+    const banner = document.getElementById('sol-status-banner');
+    banner.style.textAlign = 'left'; 
+    
+    let markedTag = q.isMarked ? `<div class="sol-status-pill" style="background: #F5F3FF; color: #7C3AED; border: 1px solid #DDD6FE; margin-left: 10px;"><i class="fas fa-bookmark"></i> MARKED FOR REVIEW</div>` : '';
+
+    if (q.finalStatus === 'correct' || q.finalStatus === 'partial') {
+        banner.innerHTML = `<div class="sol-status-pill" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;"><i class="fas fa-check-circle"></i> YOU ANSWERED CORRECTLY</div>` + markedTag;
+    } else if (q.finalStatus === 'wrong') {
+        banner.innerHTML = `<div class="sol-status-pill" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;"><i class="fas fa-times-circle"></i> YOU ANSWERED INCORRECTLY</div>` + markedTag;
+    } else {
+        banner.innerHTML = `<div class="sol-status-pill" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE;"><i class="fas fa-info-circle"></i> YOU DIDN'T ATTEMPT THIS QUESTION</div>` + markedTag;
+    }
+    // 4. Render Question Content
+    let diagData = q.diagram || q.image; 
+    let imageHtml = '';
+    if (diagData) {
+        let imgSrc = diagData.startsWith('data:image') ? diagData : `data:image/png;base64,${diagData}`;
+        imageHtml = `<div style="margin-top: 20px;"><img src="${imgSrc}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;"></div>`;
+    }
+    document.getElementById('sol-q-content').innerHTML = q.text + imageHtml;
+
+    // 5. Render Options (Premium Floating Badge Logic)
+    const optContainer = document.getElementById('sol-options-container');
+    optContainer.innerHTML = '';
+    
+    if (q.type === 'SINGLE' || q.type === 'MULTI') {
+        let labels = ['A', 'B', 'C', 'D'];
+        let correctArr = q.type === 'SINGLE' ? [q.correctIndex] : (q.correctIndices || (Array.isArray(q.correctIndex) ? q.correctIndex : [q.correctIndex]));
+        let userArr = q.type === 'SINGLE' ? [uAns] : (Array.isArray(uAns) ? uAns : []);
+
+        q.options.forEach((opt, oIdx) => {
+            let isCorrect = correctArr.includes(oIdx);
+            let isUserSel = uAns !== undefined && uAns !== null && userArr.includes(oIdx);
+            
+            let rowClass = '';
+            let badgeHtml = '';
+            
+            if (isCorrect && isUserSel) {
+                rowClass = 'correct';
+                badgeHtml = `<div class="sol-opt-badge correct"><i class="fas fa-check"></i> Correct</div>`;
+            } else if (isCorrect && !isUserSel) {
+                rowClass = 'correct'; // Still show it's the correct answer
+                badgeHtml = `<div class="sol-opt-badge correct"><i class="fas fa-check"></i> Correct Answer</div>`;
+            } else if (isUserSel && !isCorrect) {
+                rowClass = 'wrong';
+                badgeHtml = `<div class="sol-opt-badge wrong"><i class="fas fa-times"></i> Your Answer</div>`;
+            }
+
+            optContainer.innerHTML += `
+                <div class="sol-opt-row ${rowClass}">
+                    ${badgeHtml}
+                    <div class="sol-opt-letter">${labels[oIdx]}</div>
+                    <div style="flex: 1; color: #334155;">${opt}</div>
+                </div>
+            `;
+        });
+    } else if (q.type === 'NUMERICAL') {
+        optContainer.innerHTML = `
+            <div style="display:flex; gap: 20px;">
+                <div class="sol-opt-row correct" style="flex:1; justify-content:center; position:relative;">
+                    <div class="sol-opt-badge correct"><i class="fas fa-check"></i> Correct</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #065F46;">${q.correctNum}</div>
+                </div>
+                <div class="sol-opt-row ${q.finalStatus === 'wrong' ? 'wrong' : ''}" style="flex:1; justify-content:center; position:relative;">
+                    <div class="sol-opt-badge ${q.finalStatus === 'wrong' ? 'wrong' : 'correct'}" style="background: #64748B; color: white;">Your Answer</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #334155;">${uAns !== undefined && uAns !== null ? uAns : '--'}</div>
+                </div>
+            </div>
+        `;
+    }
+    // 6. Explanation Toggle Logic
+    const expBox = document.getElementById('sol-explanation-box');
+    const expBtn = document.getElementById('btn-toggle-explanation');
+    const expContent = document.getElementById('sol-explanation-content');
+    
+    expBox.style.display = 'none';
+    expBtn.innerHTML = '<i class="fas fa-eye"></i> View Solution';
+    
+    let explanationText = q.explanation || q.solution || "No detailed explanation provided for this question.";
+    expContent.innerHTML = explanationText;
+
+    expBtn.onclick = () => {
+        if (expBox.style.display === 'none') {
+            expBox.style.display = 'block';
+            expBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Solution';
+        } else {
+            expBox.style.display = 'none';
+            expBtn.innerHTML = '<i class="fas fa-eye"></i> View Solution';
+        }
+    };
+
+    updateSolPaletteState();
+
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        MathJax.typesetClear([document.getElementById('sol-q-content'), optContainer, expContent]);
+        MathJax.typesetPromise([document.getElementById('sol-q-content'), optContainer, expContent]).catch(err => console.log(err));
+    }
+}
+
+function renderSolutionPalette() {
+    let totals = {all: 0, correct: 0, wrong: 0, skipped: 0};
+    let palHtml = '';
+
+    // Group by Sections for the palette
+    sectionsData.forEach(sec => {
+        let secQs = allQuestions.filter(q => q.subject === sec.subject && q.sectionName === sec.name);
+        if (secQs.length === 0) return;
+
+        palHtml += `<div style="font-weight: 800; font-size: 0.9rem; color: #64748B; margin-bottom: 15px; margin-top: 20px;">${sec.subject.split(' ')[0]} - ${sec.name}</div>`;
+        palHtml += `<div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 25px;">`;
+
+        secQs.forEach(q => {
+            totals.all++;
+            let st = q.finalStatus === 'correct' || q.finalStatus === 'partial' ? 'correct' : (q.finalStatus === 'wrong' ? 'wrong' : 'skipped');
+            totals[st]++;
+// 🔥 CORRECTED: Placed the icon inside the bubble and added position: relative!
+            let markedIcon = q.isMarked ? `<div style="position:absolute; top:-4px; right:-4px; background:#8B5CF6; color:white; width:14px; height:14px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:0.55rem; border: 1px solid white;"><i class="fas fa-bookmark"></i></div>` : '';
+            palHtml += `<div id="sol-bub-${q.globalIndex}" class="sol-bubble ${st}" style="position: relative;" onclick="loadSolutionQuestion(${q.globalIndex})">${q.displayNumber}${markedIcon}</div>`;
+        });
+        palHtml += `</div>`;
+    });
+
+    document.getElementById('sol-palette-container').innerHTML = palHtml;
+    
+    document.getElementById('sol-count-all').innerText = totals.all;
+    document.getElementById('sol-count-correct').innerText = totals.correct;
+    document.getElementById('sol-count-wrong').innerText = totals.wrong;
+    document.getElementById('sol-count-skipped').innerText = totals.skipped;
+}
+
+function updateSolPaletteState() {
+    document.querySelectorAll('.sol-bubble').forEach(b => b.classList.remove('active'));
+    let activeBub = document.getElementById(`sol-bub-${currentSolIndex}`);
+    if(activeBub) {
+        activeBub.classList.add('active');
+        activeBub.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+// 🔥 Notice the extra stray '}' is permanently deleted from here!
