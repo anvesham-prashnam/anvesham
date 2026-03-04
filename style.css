@@ -1069,3 +1069,51 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     margin: 0 !important;
     padding: 0 !important;
 }
+/* Custom Brand Logo Sizing */
+.brand-logo {
+    width: 40px; /* Adjust this to make it bigger/smaller */
+    height: auto;
+    object-fit: contain;
+}
+.brand-logo-large {
+    width: 80px;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 15px;
+}
+/* 🚨 NEW: Special CSS to "Zoom & Crop" the logo without editing the file */
+.anvesham-symbol-frame {
+    overflow: hidden; /* This "cuts" everything outside the box */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Optional: Makes it a circle for a premium vibe */
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); /* Neon glow to match theme */
+    background: rgba(17, 24, 39, 0.8); /* Dark background behind the cropped image */
+}
+
+.anvesham-symbol-frame img {
+    max-width: none; /* Essential: Allows image to be scaled larger than container */
+    max-height: none;
+    width: auto;
+    height: 100%; /* Ensures height matches container (if portrait) */
+    /* 💥 THE MAGIC: Adjust SCALE to zoom, and translateY to center the figure. */
+    /* This zooms 2.5 times and shifts up to hide text below. */
+    transform: scale(2) translateY(+7%);
+    transform-origin: center center;
+}
+
+/* Large version for login */
+.anvesham-symbol-large {
+    width: 150px;
+    height: 150px;
+    border: 3px solid rgba(56, 189, 248, 0.8);
+    margin: 0 auto 15px auto; /* Centers the div */
+}
+
+/* Small version for sidebar */
+.anvesham-symbol-small {
+    width: 45px;
+    height: 45px;
+    border: 2px solid rgba(56, 189, 248, 0.6);
+}
