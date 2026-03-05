@@ -1765,3 +1765,28 @@ function updateSolPaletteState() {
     }
 }
 // 🔥 Notice the extra stray '}' is permanently deleted from here!
+// ================= PDF REPORT GENERATOR =================
+window.printAnalysis = function() {
+    // 1. Force ALL tabs to become visible for the print layout
+    const allViews = document.querySelectorAll('.analysis-view');
+    allViews.forEach(view => {
+        view.style.display = 'block'; 
+        view.style.opacity = '1';
+        view.style.position = 'relative';
+    });
+
+    // 2. Change the header title to look formal
+    const originalTitle = document.getElementById('qz-view-title').innerText;
+    document.getElementById('qz-view-title').innerText = testData.title || "Anvesham Official Performance Report";
+
+    // 3. Trigger the Browser's Native PDF/Print Engine
+    window.print();
+
+    // 4. Revert everything back to normal once the PDF dialog closes
+    allViews.forEach(view => {
+        view.style.display = ''; 
+        view.style.opacity = '';
+        view.style.position = '';
+    });
+    document.getElementById('qz-view-title').innerText = originalTitle;
+};
