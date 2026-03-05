@@ -81,33 +81,11 @@ auth.onAuthStateChanged((user) => {
 
 // 2. Google Login Button Click
 document.getElementById('btn-google-login').addEventListener('click', () => {
-    try {
-        // 1. Create the provider explicitly
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // 2. Force it to ask for Email and Profile data
-        provider.addScope('email');
-        provider.addScope('profile');
-        
-        // 3. Force the "Choose Account" popup to appear (clears browser caching bugs)
-        provider.setCustomParameters({
-            prompt: 'select_account'
-        });
-        
-        // 4. Use the direct firebase.auth() call to prevent variable ghosting
-        firebase.auth().signInWithPopup(provider)
-        .then((result) => {
-            console.log("Successfully logged in as:", result.user.displayName);
-        })
-        .catch((error) => {
-            console.error("Firebase Login Error: ", error);
-            alert("Login Failed: " + error.message);
-        });
-        
-    } catch (err) {
-        console.error("Provider Setup Error:", err);
-        alert("System Error: Could not initialize Google Login.");
-    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch((error) => {
+        console.error("Login Failed: ", error);
+        alert("Login Failed: " + error.message);
+    });
 });
 
 // 3. Logout Button Click
@@ -371,23 +349,13 @@ window.viewPastLog = async function(index) {
 
     try {
         // 1. If it's a new Multi-Doc log, fetch the 15-question chunks from Firebase
-if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
+        if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
             const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
             
             if (secSnapshot && typeof secSnapshot.forEach === 'function') {
-                let tempChunks = []; // Temporary array to hold the disorganized chunks
-                
                 secSnapshot.forEach(doc => {
                     let d = doc.data();
-                    if(d && d.questions) tempChunks.push(d);
-                });
-                
-                // 🔥 THE FIX: Mathematically sort the chunks so Q1-10 ALWAYS comes before Q11-20!
-                tempChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
-                
-                // Now stitch them together in perfect order
-                tempChunks.forEach(chunk => {
-                    extractedQs.push(...chunk.questions);
+                    if(d && d.questions) extractedQs.push(...d.questions);
                 });
             }
             log.allQuestions = extractedQs;
@@ -1787,37 +1755,3 @@ function updateSolPaletteState() {
     }
 }
 // 🔥 Notice the extra stray '}' is permanently deleted from here!
-// ================= PDF REPORT GENERATOR =================
-// ================= PREMIUM PDF REPORT GENERATOR =================
-window.printAnalysis = function() {
-    const allViews = document.querySelectorAll('.analysis-view');
-    
-    // 1. Force ALL tabs to become visible using !important (Fixes the blank PDF)
-    allViews.forEach(view => {
-        view.style.setProperty('display', 'block', 'important');
-        view.style.setProperty('opacity', '1', 'important');
-        view.style.setProperty('position', 'static', 'important');
-    });
-
-    // 2. Change the header title to look formal
-    const titleEl = document.getElementById('qz-view-title');
-    const originalTitle = titleEl.innerText;
-    titleEl.innerText = testData.title || "Anvesham Official Performance Report";
-
-    // 3. Give the browser 500ms to physically render the graphs before snapping the photo
-    setTimeout(() => {
-        window.print();
-    }, 500);
-
-    // 4. Safely revert ONLY after the PDF dialog is closed or saved
-    window.onafterprint = function() {
-        allViews.forEach(view => {
-            view.style.display = ''; 
-            view.style.opacity = '';
-            view.style.position = '';
-        });
-        titleEl.innerText = originalTitle;
-        window.onafterprint = null; // Clear the engine listener
-    };
-};
-// 🚨 NO MORE STRAY BRACKETS BELOW THIS LINE! 🚨
