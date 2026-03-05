@@ -1768,12 +1768,13 @@ function updateSolPaletteState() {
 // ================= PDF REPORT GENERATOR =================
 // ================= PREMIUM PDF REPORT GENERATOR =================
 window.printAnalysis = function() {
-    // 1. Force ALL tabs to become visible
     const allViews = document.querySelectorAll('.analysis-view');
+    
+    // 1. Force ALL tabs to become visible using !important (Fixes the blank PDF)
     allViews.forEach(view => {
-        view.style.display = 'block'; 
-        view.style.opacity = '1';
-        view.style.position = 'relative';
+        view.style.setProperty('display', 'block', 'important');
+        view.style.setProperty('opacity', '1', 'important');
+        view.style.setProperty('position', 'static', 'important');
     });
 
     // 2. Change the header title to look formal
@@ -1781,12 +1782,12 @@ window.printAnalysis = function() {
     const originalTitle = titleEl.innerText;
     titleEl.innerText = testData.title || "Anvesham Official Performance Report";
 
-    // 3. THE FIX: Give the browser 300ms to physically render the unrolled tabs
+    // 3. Give the browser 500ms to physically render the graphs before snapping the photo
     setTimeout(() => {
         window.print();
-    }, 300);
+    }, 500);
 
-    // 4. THE FIX: Safely revert ONLY after the PDF dialog is closed or saved
+    // 4. Safely revert ONLY after the PDF dialog is closed or saved
     window.onafterprint = function() {
         allViews.forEach(view => {
             view.style.display = ''; 
@@ -1797,3 +1798,4 @@ window.printAnalysis = function() {
         window.onafterprint = null; // Clear the engine listener
     };
 };
+// 🚨 NO MORE STRAY BRACKETS BELOW THIS LINE! 🚨
