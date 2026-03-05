@@ -349,13 +349,23 @@ window.viewPastLog = async function(index) {
 
     try {
         // 1. If it's a new Multi-Doc log, fetch the 15-question chunks from Firebase
-        if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
+if (log.isMultiDoc && currentUser && log.docId && !log.allQuestions) {
             const secSnapshot = await db.collection('users').doc(currentUser.uid).collection('logs').doc(log.docId).collection('sections').get();
             
             if (secSnapshot && typeof secSnapshot.forEach === 'function') {
+                let tempChunks = []; // Temporary array to hold the disorganized chunks
+                
                 secSnapshot.forEach(doc => {
                     let d = doc.data();
-                    if(d && d.questions) extractedQs.push(...d.questions);
+                    if(d && d.questions) tempChunks.push(d);
+                });
+                
+                // 🔥 THE FIX: Mathematically sort the chunks so Q1-10 ALWAYS comes before Q11-20!
+                tempChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
+                
+                // Now stitch them together in perfect order
+                tempChunks.forEach(chunk => {
+                    extractedQs.push(...chunk.questions);
                 });
             }
             log.allQuestions = extractedQs;
