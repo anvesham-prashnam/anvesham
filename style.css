@@ -1189,49 +1189,55 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
 }
 /* ================= PREMIUM PDF EXPORT ENGINE ================= */
 @media print {
-    /* 1. Page Setup & Margins */
+    /* 1. Page Setup */
     @page { 
         size: A4 portrait; 
-        margin: 12mm; 
+        margin: 10mm; 
     }
 
-    /* 2. Hide ALL UI elements (Sidebars, Navs, Buttons) */
+    /* 2. THE FIX: Kill Flexbox & Absolute positioning so text isn't pushed off the paper */
+    html, body, .app-screen, .qz-layout, .qz-content-area, .custom-scrollbar {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        display: block !important; 
+        position: relative !important;
+        background: white !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* 3. Re-center the content area since the sidebar is gone */
+    .qz-content-area { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 100% !important; 
+        max-width: 100% !important;
+        left: 0 !important;
+    }
+
+    /* 4. Hide Sidebars and interactive buttons */
     .qz-dark-strip, .qz-white-sidebar, .qz-top-header button, 
     .btn-back, #app-modal, .qbyq-tabs { 
         display: none !important; 
     }
 
-    /* 3. Force exact background colors (Crucial for correct/wrong badges) */
+    /* 5. Force exact colors (Preserves your green/red correct/wrong badges) */
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
-    /* 4. Un-scroll everything so no data is hidden */
-    body, html, #screen-analysis, .qz-layout, .qz-content-area, .custom-scrollbar {
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        background: white !important;
-    }
-
-    /* 5. Layout Adjustments to take up the full A4 page */
-    .qz-content-area { 
-        margin: 0 !important; 
-        padding: 0 !important; 
-        width: 100% !important; 
-    }
-
-    /* 6. Beautiful Watermark Graphic */
+    /* 6. The Premium Watermark */
     .qz-content-area::after {
         content: "";
         position: fixed;
         top: 50%; left: 50%;
-        width: 500px; height: 500px;
-        background-image: url('anvesham-logo.png'); /* Uses your custom logo! */
+        width: 400px; height: 400px;
+        background-image: url('anvesham-logo.png'); 
         background-size: contain;
         background-repeat: no-repeat;
-        opacity: 0.04; /* Very subtle ghosting effect */
+        opacity: 0.04; 
         transform: translate(-50%, -50%);
         z-index: -10;
         pointer-events: none;
@@ -1243,30 +1249,29 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
         padding-bottom: 15px !important;
         margin-bottom: 30px !important;
         text-align: center;
+        display: block !important;
     }
     .qz-top-header h1 {
-        font-size: 22pt !important;
+        font-size: 24pt !important;
         color: #0F172A !important;
         text-transform: uppercase;
         letter-spacing: 2px;
     }
 
-    /* 8. PREVENT CUTTING: Tell the printer to never split these boxes in half! */
-    .qz-card, .qz-metric-box, .q-section-block, .qbyq-subj-wrapper, tr {
+    /* 8. PREVENT CUTTING: Tell the printer to never split boxes in half across pages! */
+    .qz-card, .qz-metric-box, .q-section-block, tr, .qbyq-subj-wrapper {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 
-    /* 9. Force every main section (Overview, Potential, QbyQ) to start on a new page */
+    /* 9. Ensure Tabs force a new page beautifully */
     .analysis-view {
-        page-break-after: always;
-        margin-bottom: 20px !important;
+        page-break-before: always;
+        margin-bottom: 30px !important;
         box-shadow: none !important;
         border: none !important;
     }
-    
-    /* Ensure all Qs by Qs subject blocks display in print */
-    .qbyq-subj-wrapper {
-        display: block !important;
+    .analysis-view:first-of-type {
+        page-break-before: auto; /* Don't force page break on the very first overview tab */
     }
 }
