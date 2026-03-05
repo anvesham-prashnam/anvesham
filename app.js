@@ -1766,8 +1766,9 @@ function updateSolPaletteState() {
 }
 // 🔥 Notice the extra stray '}' is permanently deleted from here!
 // ================= PDF REPORT GENERATOR =================
+// ================= PREMIUM PDF REPORT GENERATOR =================
 window.printAnalysis = function() {
-    // 1. Force ALL tabs to become visible for the print layout
+    // 1. Force ALL tabs to become visible
     const allViews = document.querySelectorAll('.analysis-view');
     allViews.forEach(view => {
         view.style.display = 'block'; 
@@ -1776,17 +1777,23 @@ window.printAnalysis = function() {
     });
 
     // 2. Change the header title to look formal
-    const originalTitle = document.getElementById('qz-view-title').innerText;
-    document.getElementById('qz-view-title').innerText = testData.title || "Anvesham Official Performance Report";
+    const titleEl = document.getElementById('qz-view-title');
+    const originalTitle = titleEl.innerText;
+    titleEl.innerText = testData.title || "Anvesham Official Performance Report";
 
-    // 3. Trigger the Browser's Native PDF/Print Engine
-    window.print();
+    // 3. THE FIX: Give the browser 300ms to physically render the unrolled tabs
+    setTimeout(() => {
+        window.print();
+    }, 300);
 
-    // 4. Revert everything back to normal once the PDF dialog closes
-    allViews.forEach(view => {
-        view.style.display = ''; 
-        view.style.opacity = '';
-        view.style.position = '';
-    });
-    document.getElementById('qz-view-title').innerText = originalTitle;
+    // 4. THE FIX: Safely revert ONLY after the PDF dialog is closed or saved
+    window.onafterprint = function() {
+        allViews.forEach(view => {
+            view.style.display = ''; 
+            view.style.opacity = '';
+            view.style.position = '';
+        });
+        titleEl.innerText = originalTitle;
+        window.onafterprint = null; // Clear the engine listener
+    };
 };
