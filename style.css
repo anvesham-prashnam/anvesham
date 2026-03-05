@@ -1187,3 +1187,86 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 25px;
 }
+/* ================= PREMIUM PDF EXPORT ENGINE ================= */
+@media print {
+    /* 1. Page Setup & Margins */
+    @page { 
+        size: A4 portrait; 
+        margin: 12mm; 
+    }
+
+    /* 2. Hide ALL UI elements (Sidebars, Navs, Buttons) */
+    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button, 
+    .btn-back, #app-modal, .qbyq-tabs { 
+        display: none !important; 
+    }
+
+    /* 3. Force exact background colors (Crucial for correct/wrong badges) */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 4. Un-scroll everything so no data is hidden */
+    body, html, #screen-analysis, .qz-layout, .qz-content-area, .custom-scrollbar {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    /* 5. Layout Adjustments to take up the full A4 page */
+    .qz-content-area { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 100% !important; 
+    }
+
+    /* 6. Beautiful Watermark Graphic */
+    .qz-content-area::after {
+        content: "";
+        position: fixed;
+        top: 50%; left: 50%;
+        width: 500px; height: 500px;
+        background-image: url('anvesham-logo.png'); /* Uses your custom logo! */
+        background-size: contain;
+        background-repeat: no-repeat;
+        opacity: 0.04; /* Very subtle ghosting effect */
+        transform: translate(-50%, -50%);
+        z-index: -10;
+        pointer-events: none;
+    }
+
+    /* 7. Formal Header Styling */
+    .qz-top-header {
+        border-bottom: 3px solid #38BDF8 !important;
+        padding-bottom: 15px !important;
+        margin-bottom: 30px !important;
+        text-align: center;
+    }
+    .qz-top-header h1 {
+        font-size: 22pt !important;
+        color: #0F172A !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    /* 8. PREVENT CUTTING: Tell the printer to never split these boxes in half! */
+    .qz-card, .qz-metric-box, .q-section-block, .qbyq-subj-wrapper, tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* 9. Force every main section (Overview, Potential, QbyQ) to start on a new page */
+    .analysis-view {
+        page-break-after: always;
+        margin-bottom: 20px !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Ensure all Qs by Qs subject blocks display in print */
+    .qbyq-subj-wrapper {
+        display: block !important;
+    }
+}
