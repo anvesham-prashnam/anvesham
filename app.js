@@ -1772,18 +1772,18 @@ function updateSolPaletteState() {
 }
 // 🔥 Notice the extra stray '}' is permanently deleted from here!
 // ================= PDF REPORT GENERATOR =================
-// ================= PREMIUM PDF REPORT GENERATOR =================
-window.printAnalysis = function() {
+// ================= ULTRA-PREMIUM PDF REPORT GENERATOR =================
+window.printAnalysis = async function() {
     const includeQs = document.getElementById('print-include-qs').checked;
     const allViews = document.querySelectorAll('.analysis-view');
     
-    // 1. Add a class to body to trigger our Sexy Print CSS
+    // 1. Trigger Premium Print CSS Mode
     document.body.classList.add('premium-print-mode');
 
-    // 2. Unroll the tabs based on the checkbox
+    // 2. Unroll the standard tabs (ALWAYS hide the useless bubbles tab on paper)
     allViews.forEach(view => {
-        if (view.id === 'tab-qbyq' && !includeQs) {
-            view.style.setProperty('display', 'none', 'important'); // Keep it hidden!
+        if (view.id === 'tab-qbyq') {
+            view.style.setProperty('display', 'none', 'important');
         } else {
             view.style.setProperty('display', 'block', 'important');
             view.style.setProperty('opacity', '1', 'important');
@@ -1791,17 +1791,109 @@ window.printAnalysis = function() {
         }
     });
 
-    // 3. Set the formal title
+    // 3. GENERATE THE ACTUAL QUESTIONS REPORT (The Magic happens here)
+    let printQContainer = document.getElementById('print-questions-container');
+    if (!printQContainer) {
+        printQContainer = document.createElement('div');
+        printQContainer.id = 'print-questions-container';
+        document.querySelector('.qz-content-area').appendChild(printQContainer);
+    }
+    printQContainer.innerHTML = ''; // Clear old data
+
+    if (includeQs) {
+        printQContainer.style.setProperty('display', 'block', 'important');
+        
+        // Build the Book Cover for the questions section
+        let qHtml = `<div class="print-q-report-header"><h2>COMPREHENSIVE DIAGNOSTICS & SOLUTIONS</h2></div>`;
+        
+        sectionsData.forEach(sec => {
+            let secQs = allQuestions.filter(q => q.subject === sec.subject && q.sectionName === sec.name);
+            if(secQs.length === 0) return;
+            
+            qHtml += `<div class="print-sec-header">PART: ${sec.subject} - ${sec.name}</div>`;
+            
+            secQs.forEach(q => {
+                let uAns = userAnswers[q.globalIndex];
+                let statusColor = q.finalStatus === 'correct' || q.finalStatus === 'partial' ? '#10B981' : (q.finalStatus === 'wrong' ? '#EF4444' : '#64748B');
+                let statusText = q.finalStatus === 'correct' ? 'CORRECT' : (q.finalStatus === 'partial' ? 'PARTIAL' : (q.finalStatus === 'wrong' ? 'INCORRECT' : 'UNATTEMPTED'));
+                
+                let marksEarned = q.finalStatus === 'correct' ? `+${q.posMarks}` : (q.finalStatus === 'wrong' ? `-${q.negMarks}` : '0');
+                if (q.finalStatus === 'partial' && uAns) marksEarned = `+${uAns.length}`; // Calculate partial marks
+
+                let diagData = q.diagram || q.image; 
+                let imageHtml = diagData ? `<div style="margin-top: 15px;"><img src="${diagData.startsWith('data:image') ? diagData : 'data:image/png;base64,'+diagData}" style="max-height: 200px; border-radius: 8px; border: 1px solid #E2E8F0;"></div>` : '';
+
+                let optionsHtml = '';
+                if (q.type === 'SINGLE' || q.type === 'MULTI') {
+                    let correctArr = q.type === 'SINGLE' ? [q.correctIndex] : (q.correctIndices || (Array.isArray(q.correctIndex) ? q.correctIndex : [q.correctIndex]));
+                    let userArr = q.type === 'SINGLE' ? [uAns] : (Array.isArray(uAns) ? uAns : []);
+                    
+                    optionsHtml += `<div class="print-opts-grid">`;
+                    q.options.forEach((opt, oIdx) => {
+                        let isC = correctArr.includes(oIdx);
+                        let isU = uAns !== undefined && uAns !== null && userArr.includes(oIdx);
+                        
+                        let badge = '';
+                        if(isC && isU) badge = `<span class="opt-badge correct">✔ Correct</span>`;
+                        else if (isC && !isU) badge = `<span class="opt-badge correct">✔ Correct Answer</span>`;
+                        else if (!isC && isU) badge = `<span class="opt-badge wrong">❌ Your Answer</span>`;
+                        
+                        let border = isC ? 'border: 2px solid #10B981;' : (isU ? 'border: 2px solid #EF4444;' : 'border: 1px solid #E2E8F0;');
+                        let bg = isC ? 'background: #F0FDF4;' : (isU ? 'background: #FEF2F2;' : 'background: #F8FAFC;');
+
+                        optionsHtml += `
+                        <div class="print-opt-box" style="${border} ${bg}">
+                            ${badge}
+                            <div style="font-weight:bold; color:#475569; margin-bottom: 5px;">Option ${['A','B','C','D'][oIdx]}</div>
+                            <div>${opt}</div>
+                        </div>`;
+                    });
+                    optionsHtml += `</div>`;
+                } else {
+                    optionsHtml = `<div style="display:flex; gap: 20px; margin-top: 15px;">
+                        <div class="print-opt-box" style="border: 2px solid #10B981; background: #F0FDF4;"><strong>Correct Answer:</strong> ${q.correctNum}</div>
+                        <div class="print-opt-box" style="border: 2px solid ${q.finalStatus==='wrong'?'#EF4444':'#E2E8F0'}; background: ${q.finalStatus==='wrong'?'#FEF2F2':'#F8FAFC'};"><strong>Your Answer:</strong> ${uAns !== undefined && uAns !== null ? uAns : '--'}</div>
+                    </div>`;
+                }
+
+                let expHtml = (q.explanation || q.solution) ? `<div class="print-explanation"><strong><i class="fas fa-lightbulb"></i> Solution:</strong><br>${q.explanation || q.solution}</div>` : '';
+
+                qHtml += `
+                <div class="print-q-card">
+                    <div class="print-q-header">
+                        <span class="q-num">Question ${q.displayNumber}</span>
+                        <div style="display:flex; gap: 10px; align-items: center;">
+                            <span style="font-weight:900; color: ${statusColor}; letter-spacing: 1px;">${statusText}</span>
+                            <span class="q-marks" style="background: ${statusColor};">${marksEarned}</span>
+                        </div>
+                    </div>
+                    <div class="print-q-text">${q.text} ${imageHtml}</div>
+                    ${optionsHtml}
+                    ${expHtml}
+                </div>`;
+            });
+        });
+        printQContainer.innerHTML = qHtml;
+
+        // 🚨 CRITICAL: We must force MathJax to render all these new equations before we take the PDF photo!
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            document.getElementById('qz-view-title').innerText = "Rendering Math Equations... Please wait.";
+            await MathJax.typesetPromise([printQContainer]).catch(err => console.log(err));
+        }
+    } else {
+        printQContainer.style.setProperty('display', 'none', 'important');
+    }
+
+    // 4. Set the formal title and Snap the Photo
     const titleEl = document.getElementById('qz-view-title');
     const originalTitle = titleEl.innerText;
     titleEl.innerText = testData.title || "Anvesham Official Performance Report";
 
-    // 4. Snap the photo
     setTimeout(() => {
         window.print();
     }, 500);
 
-    // 5. Revert everything perfectly
+    // 5. Revert everything perfectly so the screen goes back to normal
     window.onafterprint = function() {
         document.body.classList.remove('premium-print-mode');
         allViews.forEach(view => {
@@ -1809,7 +1901,8 @@ window.printAnalysis = function() {
             view.style.opacity = '';
             view.style.position = '';
         });
-        titleEl.innerText = originalTitle;
+        titleEl.innerText = "Overview";
+        if(printQContainer) printQContainer.innerHTML = ''; // Delete the massive HTML to save RAM
         window.onafterprint = null; 
     };
 };
