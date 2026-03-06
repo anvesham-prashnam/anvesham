@@ -1780,7 +1780,7 @@ window.printAnalysis = async function() {
     // 1. Trigger Premium Print CSS Mode
     document.body.classList.add('premium-print-mode');
 
-    // 2. Unroll the standard tabs (ALWAYS hide the useless bubbles tab on paper)
+    // 2. Unroll the standard tabs (Hide the bubbles tab)
     allViews.forEach(view => {
         if (view.id === 'tab-qbyq') {
             view.style.setProperty('display', 'none', 'important');
@@ -1791,19 +1791,93 @@ window.printAnalysis = async function() {
         }
     });
 
-    // 3. GENERATE THE ACTUAL QUESTIONS REPORT (The Magic happens here)
+    // =========================================================
+    // 3. BUILD THE VFX COVER PAGE
+    // =========================================================
+    let coverPage = document.getElementById('print-cover-page');
+    if (!coverPage) {
+        coverPage = document.createElement('div');
+        coverPage.id = 'print-cover-page';
+        document.querySelector('.qz-content-area').prepend(coverPage);
+    }
+    
+    let candName = currentUser ? currentUser.displayName : "Guest Candidate";
+    let dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    let totalScore = document.getElementById('res-total-score').innerText;
+    let maxScore = document.getElementById('res-max-score').innerText;
+    let accuracy = document.getElementById('res-accuracy').innerText;
+    let attempted = document.getElementById('res-attempted').innerText;
+    let timeTaken = document.getElementById('res-time').innerText;
+
+    // Generate beautiful progress bars for each subject
+    let subjBarsHtml = '';
+    document.querySelectorAll('.qz-mini-sub').forEach(el => {
+        let subjName = el.childNodes[0].textContent.trim().replace('Score', '').trim();
+        let scoreSpan = el.querySelector('span');
+        let subjScoreRaw = scoreSpan.innerText.split('/');
+        let sScore = parseInt(subjScoreRaw[0]);
+        let sMax = parseInt(subjScoreRaw[1]);
+        let color = scoreSpan.style.color || '#38BDF8';
+        let pct = sMax > 0 ? Math.max(0, (sScore / sMax) * 100) : 0; // Clamps negatives to 0% width
+
+        subjBarsHtml += `
+            <div class="cover-subj-row">
+                <div class="cover-subj-name">${subjName}</div>
+                <div class="cover-subj-bar-bg">
+                    <div class="cover-subj-bar-fill" style="width: ${pct}%; background: ${color}; box-shadow: 0 0 10px ${color}80;"></div>
+                </div>
+                <div class="cover-subj-score" style="color: ${color}">${sScore}/${sMax}</div>
+            </div>
+        `;
+    });
+
+    coverPage.innerHTML = `
+        <div class="cover-brand">
+            <div class="anvesham-symbol-frame anvesham-symbol-large" style="margin: 0 auto 20px auto; border-color: #0F172A; box-shadow: none;">
+                <img src="anvesham-logo.png" alt="Anvesham">
+            </div>
+            <div class="cover-brand-text">ANVESHAM</div>
+            <div class="cover-brand-sub">Premium Analytics Engine</div>
+        </div>
+        
+        <div class="cover-title-box">
+            <h1>${testData.title || "Diagnostic Mock Test"}</h1>
+            <div class="cover-meta">Candidate: <strong>${candName}</strong> &nbsp;|&nbsp; Date: <strong>${dateStr}</strong></div>
+        </div>
+
+        <div class="cover-score-circle">
+            <div class="csc-label">OVERALL SCORE</div>
+            <div class="csc-value">${totalScore}</div>
+            <div class="csc-max">out of ${maxScore}</div>
+        </div>
+
+        <div class="cover-stats-grid">
+            <div class="c-stat-box"><div class="cs-label">Accuracy</div><div class="cs-val" style="color:#10B981">${accuracy}</div></div>
+            <div class="c-stat-box"><div class="cs-label">Attempted</div><div class="cs-val" style="color:#F59E0B">${attempted}</div></div>
+            <div class="c-stat-box"><div class="cs-label">Time Taken</div><div class="cs-val" style="color:#8B5CF6">${timeTaken}m</div></div>
+        </div>
+
+        <div class="cover-subj-performance">
+            <h3>Subject-wise Mastery Breakdown</h3>
+            ${subjBarsHtml}
+        </div>
+        
+        <div class="cover-footer">REPORT GENERATED SECURELY BY ANVESHAM ARTIFICIAL INTELLIGENCE</div>
+    `;
+
+    // =========================================================
+    // 4. GENERATE THE QUESTIONS DATA (If Toggled)
+    // =========================================================
     let printQContainer = document.getElementById('print-questions-container');
     if (!printQContainer) {
         printQContainer = document.createElement('div');
         printQContainer.id = 'print-questions-container';
         document.querySelector('.qz-content-area').appendChild(printQContainer);
     }
-    printQContainer.innerHTML = ''; // Clear old data
+    printQContainer.innerHTML = ''; 
 
     if (includeQs) {
         printQContainer.style.setProperty('display', 'block', 'important');
-        
-        // Build the Book Cover for the questions section
         let qHtml = `<div class="print-q-report-header"><h2>COMPREHENSIVE DIAGNOSTICS & SOLUTIONS</h2></div>`;
         
         sectionsData.forEach(sec => {
@@ -1818,7 +1892,7 @@ window.printAnalysis = async function() {
                 let statusText = q.finalStatus === 'correct' ? 'CORRECT' : (q.finalStatus === 'partial' ? 'PARTIAL' : (q.finalStatus === 'wrong' ? 'INCORRECT' : 'UNATTEMPTED'));
                 
                 let marksEarned = q.finalStatus === 'correct' ? `+${q.posMarks}` : (q.finalStatus === 'wrong' ? `-${q.negMarks}` : '0');
-                if (q.finalStatus === 'partial' && uAns) marksEarned = `+${uAns.length}`; // Calculate partial marks
+                if (q.finalStatus === 'partial' && uAns) marksEarned = `+${uAns.length}`; 
 
                 let diagData = q.diagram || q.image; 
                 let imageHtml = diagData ? `<div style="margin-top: 15px;"><img src="${diagData.startsWith('data:image') ? diagData : 'data:image/png;base64,'+diagData}" style="max-height: 200px; border-radius: 8px; border: 1px solid #E2E8F0;"></div>` : '';
@@ -1875,25 +1949,19 @@ window.printAnalysis = async function() {
         });
         printQContainer.innerHTML = qHtml;
 
-        // 🚨 CRITICAL: We must force MathJax to render all these new equations before we take the PDF photo!
         if (window.MathJax && window.MathJax.typesetPromise) {
-            document.getElementById('qz-view-title').innerText = "Rendering Math Equations... Please wait.";
             await MathJax.typesetPromise([printQContainer]).catch(err => console.log(err));
         }
     } else {
         printQContainer.style.setProperty('display', 'none', 'important');
     }
 
-    // 4. Set the formal title and Snap the Photo
-    const titleEl = document.getElementById('qz-view-title');
-    const originalTitle = titleEl.innerText;
-    titleEl.innerText = testData.title || "Anvesham Official Performance Report";
-
+    // 5. Snap the Photo
     setTimeout(() => {
         window.print();
     }, 500);
 
-    // 5. Revert everything perfectly so the screen goes back to normal
+    // 6. Revert everything
     window.onafterprint = function() {
         document.body.classList.remove('premium-print-mode');
         allViews.forEach(view => {
@@ -1901,8 +1969,8 @@ window.printAnalysis = async function() {
             view.style.opacity = '';
             view.style.position = '';
         });
-        titleEl.innerText = "Overview";
-        if(printQContainer) printQContainer.innerHTML = ''; // Delete the massive HTML to save RAM
+        if(coverPage) coverPage.remove(); // Destroy cover page after print
+        if(printQContainer) printQContainer.innerHTML = ''; 
         window.onafterprint = null; 
     };
 };
