@@ -1774,33 +1774,42 @@ function updateSolPaletteState() {
 // ================= PDF REPORT GENERATOR =================
 // ================= PREMIUM PDF REPORT GENERATOR =================
 window.printAnalysis = function() {
+    const includeQs = document.getElementById('print-include-qs').checked;
     const allViews = document.querySelectorAll('.analysis-view');
     
-    // 1. Force ALL tabs to become visible using !important (Fixes the blank PDF)
+    // 1. Add a class to body to trigger our Sexy Print CSS
+    document.body.classList.add('premium-print-mode');
+
+    // 2. Unroll the tabs based on the checkbox
     allViews.forEach(view => {
-        view.style.setProperty('display', 'block', 'important');
-        view.style.setProperty('opacity', '1', 'important');
-        view.style.setProperty('position', 'static', 'important');
+        if (view.id === 'tab-qbyq' && !includeQs) {
+            view.style.setProperty('display', 'none', 'important'); // Keep it hidden!
+        } else {
+            view.style.setProperty('display', 'block', 'important');
+            view.style.setProperty('opacity', '1', 'important');
+            view.style.setProperty('position', 'static', 'important');
+        }
     });
 
-    // 2. Change the header title to look formal
+    // 3. Set the formal title
     const titleEl = document.getElementById('qz-view-title');
     const originalTitle = titleEl.innerText;
     titleEl.innerText = testData.title || "Anvesham Official Performance Report";
 
-    // 3. Give the browser 500ms to physically render the graphs before snapping the photo
+    // 4. Snap the photo
     setTimeout(() => {
         window.print();
     }, 500);
 
-    // 4. Safely revert ONLY after the PDF dialog is closed or saved
+    // 5. Revert everything perfectly
     window.onafterprint = function() {
+        document.body.classList.remove('premium-print-mode');
         allViews.forEach(view => {
             view.style.display = ''; 
             view.style.opacity = '';
             view.style.position = '';
         });
         titleEl.innerText = originalTitle;
-        window.onafterprint = null; // Clear the engine listener
+        window.onafterprint = null; 
     };
 };
