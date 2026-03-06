@@ -1328,6 +1328,7 @@ function renderPotentialChart(totals) {
             ]
         },
         options: {
+animation: false,
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -1959,7 +1960,7 @@ window.printAnalysis = async function() {
     // 5. Snap the Photo
     setTimeout(() => {
         window.print();
-    }, 500);
+    }, 1200);
 
     // 6. Revert everything
     window.onafterprint = function() {
