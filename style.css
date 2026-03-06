@@ -867,45 +867,6 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     margin-top: 15px;
     border: 1px solid #ccc;
 }
-/* ================= PRINTING ENGINE ================= */
-@media print {
-    /* Hide the entire app, backgrounds, and sidebars */
-    body * {
-        visibility: hidden;
-    }
-    
-    /* Make ONLY the modal visible */
-    #app-modal, #app-modal * {
-        visibility: visible;
-    }
-    
-    /* Force the modal to act like a normal webpage so it prints all pages, not just the scrolled view */
-    #app-modal {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: auto;
-        background: white;
-        overflow: visible !important;
-    }
-    
-    .modal-content, .modal-body {
-        box-shadow: none !important;
-        border: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: visible !important;
-        max-height: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Hide the header and buttons on the actual printout */
-    .modal-header, .close-btn, #btn-print-paper {
-        display: none !important;
-    }
-}
 /* ================= ANVESHAM ANALYSIS UI OVERRIDES ================= */
 
 /* 1. Soften the main cards and add premium floating shadows */
@@ -1187,91 +1148,73 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 25px;
 }
-/* ================= PREMIUM PDF EXPORT ENGINE ================= */
+/* ================= ULTIMATE UNIFIED PRINT ENGINE ================= */
 @media print {
-    /* 1. Page Setup */
-    @page { 
-        size: A4 portrait; 
-        margin: 10mm; 
+    @page { size: A4 portrait; margin: 10mm; }
+
+    /* --- 1. GLOBAL FIXES --- */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    html, body { background: white !important; height: auto !important; overflow: visible !important; color: black !important; }
+
+    /* --- 2. HIDE UNNECESSARY UI CLUTTER --- */
+    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button,
+    .btn-back, .qbyq-tabs, .modal-header, .close-btn, #btn-print-paper {
+        display: none !important;
     }
 
-    /* 2. THE FIX: Kill Flexbox & Absolute positioning so text isn't pushed off the paper */
-    html, body, .app-screen, .qz-layout, .qz-content-area, .custom-scrollbar {
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        display: block !important; 
-        position: relative !important;
-        background: white !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+    /* --- 3. SCENARIO A: PRINTING THE QUESTION PAPER (MODAL IS OPEN) --- */
+    body:has(#app-modal[style*="display: flex"]) .app-screen {
+        display: none !important; /* Hide the background app so it doesn't overlap */
+    }
+    
+    #app-modal[style*="display: flex"] {
+        position: absolute !important; left: 0 !important; top: 0 !important;
+        width: 100% !important; height: auto !important; display: block !important;
+        background: white !important; overflow: visible !important;
+    }
+    
+    #app-modal[style*="display: flex"] .modal-content, 
+    #app-modal[style*="display: flex"] .modal-body {
+        box-shadow: none !important; border: none !important; width: 100% !important;
+        max-width: 100% !important; max-height: none !important; overflow: visible !important;
+        margin: 0 !important; padding: 0 !important; display: block !important;
     }
 
-    /* 3. Re-center the content area since the sidebar is gone */
-    .qz-content-area { 
-        margin: 0 !important; 
-        padding: 0 !important; 
-        width: 100% !important; 
-        max-width: 100% !important;
-        left: 0 !important;
+    /* --- 4. SCENARIO B: PRINTING THE ANALYSIS REPORT (MODAL IS CLOSED) --- */
+    body:not(:has(#app-modal[style*="display: flex"])) #app-modal {
+        display: none !important; /* Ensure the modal is totally gone */
+    }
+    
+    body:not(:has(#app-modal[style*="display: flex"])) .app-screen:not(#screen-analysis) {
+        display: none !important; /* Hide everything except the analysis screen */
     }
 
-    /* 4. Hide Sidebars and interactive buttons */
-    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button, 
-    .btn-back, #app-modal, .qbyq-tabs { 
-        display: none !important; 
+    body:not(:has(#app-modal[style*="display: flex"])) html, 
+    body:not(:has(#app-modal[style*="display: flex"])) body, 
+    body:not(:has(#app-modal[style*="display: flex"])) #screen-analysis, 
+    body:not(:has(#app-modal[style*="display: flex"])) .qz-layout, 
+    body:not(:has(#app-modal[style*="display: flex"])) .qz-content-area, 
+    body:not(:has(#app-modal[style*="display: flex"])) .custom-scrollbar {
+        height: auto !important; max-height: none !important; overflow: visible !important;
+        display: block !important; position: relative !important; opacity: 1 !important;
     }
 
-    /* 5. Force exact colors (Preserves your green/red correct/wrong badges) */
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+    .qz-content-area { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; left: 0 !important; }
+    .qz-top-header { border-bottom: 3px solid #38BDF8 !important; padding-bottom: 15px !important; margin-bottom: 30px !important; text-align: center; display: block !important; }
+    .qz-top-header h1 { font-size: 24pt !important; color: #0F172A !important; text-transform: uppercase; letter-spacing: 2px; }
+    
+    /* The Premium Watermark exclusively for Analysis */
+    body:not(:has(#app-modal[style*="display: flex"])) .qz-content-area::after {
+        content: ""; position: fixed; top: 50%; left: 50%; width: 400px; height: 400px;
+        background-image: url('anvesham-logo.png'); background-size: contain; background-repeat: no-repeat;
+        opacity: 0.04; transform: translate(-50%, -50%); z-index: -10; pointer-events: none;
     }
 
-    /* 6. The Premium Watermark */
-    .qz-content-area::after {
-        content: "";
-        position: fixed;
-        top: 50%; left: 50%;
-        width: 400px; height: 400px;
-        background-image: url('anvesham-logo.png'); 
-        background-size: contain;
-        background-repeat: no-repeat;
-        opacity: 0.04; 
-        transform: translate(-50%, -50%);
-        z-index: -10;
-        pointer-events: none;
+    /* --- 5. PREVENT PAGE CUTTING FOR BOTH --- */
+    .qz-card, .qz-metric-box, .q-section-block, tr, .qbyq-subj-wrapper, .qp-q-block, .qp-instructions {
+        page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 20px !important;
     }
 
-    /* 7. Formal Header Styling */
-    .qz-top-header {
-        border-bottom: 3px solid #38BDF8 !important;
-        padding-bottom: 15px !important;
-        margin-bottom: 30px !important;
-        text-align: center;
-        display: block !important;
-    }
-    .qz-top-header h1 {
-        font-size: 24pt !important;
-        color: #0F172A !important;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-
-    /* 8. PREVENT CUTTING: Tell the printer to never split boxes in half across pages! */
-    .qz-card, .qz-metric-box, .q-section-block, tr, .qbyq-subj-wrapper {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
-
-    /* 9. Ensure Tabs force a new page beautifully */
-    .analysis-view {
-        page-break-before: always;
-        margin-bottom: 30px !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    .analysis-view:first-of-type {
-        page-break-before: auto; /* Don't force page break on the very first overview tab */
-    }
+    .analysis-view { page-break-before: always; margin-bottom: 30px !important; box-shadow: none !important; border: none !important; }
+    .analysis-view:first-of-type { page-break-before: auto; }
 }
