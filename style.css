@@ -1284,3 +1284,12 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     #app-modal[style*="display: flex"] .modal-content, #app-modal[style*="display: flex"] .modal-body { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; max-height: none !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; display: block !important; }
     .qp-q-block, .qp-instructions { page-break-inside: avoid !important; margin-bottom: 20px !important; }
 }
+/* ================= LIVE QUESTION TIMER ================= */
+.live-time-badge {
+    background: #EFF6FF; color: #2563EB; padding: 4px 12px;
+    border-radius: 6px; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid #BFDBFE; display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.1);
+}
+.live-time-badge i { animation: pulseIcon 2s infinite; }
+@keyframes pulseIcon { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
