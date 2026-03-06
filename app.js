@@ -892,7 +892,7 @@ document.getElementById('btn-mark-review').addEventListener('click', () => {
     loadQuestion(currentQuestionIndex + 1);
 });
 
-// Timer Setup with Live Question Tracking
+// Timer Setup
 function startTimer(durationSeconds) {
     let timer = durationSeconds, minutes, seconds;
     clearInterval(examInterval);
@@ -904,9 +904,10 @@ function startTimer(durationSeconds) {
         minutes = minutes < 10 ? "0" + minutes : minutes;
         seconds = seconds < 10 ? "0" + seconds : seconds;
 
+        // 1. Updates the main top-right exam timer
         document.getElementById('timer').textContent = minutes + ":" + seconds;
 
-        // 🔥 THE FIX: Live Question Timer Updates Every Second
+        // 2. 🔥 THE FIX: Updates the Live Question Timer every second!
         if (currentQuestionStartTime > 0) {
             let ms = Date.now() - currentQuestionStartTime;
             let totalSec = Math.floor(ms / 1000) + (timeSpentOnQuestion[currentQuestionIndex] || 0);
@@ -923,12 +924,6 @@ function startTimer(durationSeconds) {
         }
     }, 1000);
 }
-document.getElementById('btn-submit').addEventListener('click', () => {
-    if(confirm("Are you sure you want to submit the test?")) {
-        submitExam();
-    }
-});
-
 // ================= THE BEAST ANALYSIS ENGINE =================
 
 // Sidebar Navigation
