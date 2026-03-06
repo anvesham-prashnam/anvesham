@@ -892,7 +892,7 @@ document.getElementById('btn-mark-review').addEventListener('click', () => {
     loadQuestion(currentQuestionIndex + 1);
 });
 
-// Timer Setup
+// Timer Setup with Live Question Tracking
 function startTimer(durationSeconds) {
     let timer = durationSeconds, minutes, seconds;
     clearInterval(examInterval);
@@ -906,6 +906,16 @@ function startTimer(durationSeconds) {
 
         document.getElementById('timer').textContent = minutes + ":" + seconds;
 
+        // 🔥 THE FIX: Live Question Timer Updates Every Second
+        if (currentQuestionStartTime > 0) {
+            let ms = Date.now() - currentQuestionStartTime;
+            let totalSec = Math.floor(ms / 1000) + (timeSpentOnQuestion[currentQuestionIndex] || 0);
+            let qm = Math.floor(totalSec / 60);
+            let qs = totalSec % 60;
+            let qTimeEl = document.getElementById('live-q-time');
+            if (qTimeEl) qTimeEl.innerText = `${qm < 10 ? '0'+qm : qm}:${qs < 10 ? '0'+qs : qs}`;
+        }
+
         if (--timer <= 0) {
             clearInterval(examInterval);
             alert("Time is up! Submitting exam automatically.");
@@ -913,7 +923,6 @@ function startTimer(durationSeconds) {
         }
     }, 1000);
 }
-
 document.getElementById('btn-submit').addEventListener('click', () => {
     if(confirm("Are you sure you want to submit the test?")) {
         submitExam();
@@ -1281,6 +1290,54 @@ allQuestions.forEach((q) => {
 
     qGridHtml += `</div>`; 
     document.getElementById('qbyq-container').innerHTML = qGridHtml;
+// ==========================================
+    // 🔥 NEW: TIME-WISE ANALYSIS ENGINE
+    // ==========================================
+    let timeHtml = `<table class="qz-table" style="margin-top: 15px;">
+        <thead>
+            <tr>
+                <th style="width: 80px; text-align: left;">Q.No</th>
+                <th style="width: 150px; text-align: left;">Subject</th>
+                <th style="width: 120px; text-align: left;">Status</th>
+                <th style="width: 100px; text-align: center;">Time</th>
+                <th style="text-align: left;">Time Distribution</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    let maxTime = Math.max(...(Object.values(timeSpentOnQuestion).length > 0 ? Object.values(timeSpentOnQuestion) : [1]));
+    if (maxTime === 0) maxTime = 1;
+
+    allQuestions.forEach(q => {
+        let t = timeSpentOnQuestion[q.globalIndex] || 0;
+        let m = Math.floor(t / 60); let s = t % 60;
+        let timeStr = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+        
+        let statusColor = q.finalStatus === 'correct' || q.finalStatus === 'partial' ? '#10B981' : (q.finalStatus === 'wrong' ? '#EF4444' : '#64748B');
+        let statusText = q.finalStatus === 'correct' ? 'Correct' : (q.finalStatus === 'partial' ? 'Partial' : (q.finalStatus === 'wrong' ? 'Wrong' : 'Skipped'));
+        let icon = q.finalStatus === 'correct' || q.finalStatus === 'partial' ? 'fa-check' : (q.finalStatus === 'wrong' ? 'fa-times' : 'fa-minus');
+        
+        let barWidth = Math.max(1, (t / maxTime) * 100);
+        // Color shifts: >3 mins = Red, >2 mins = Orange, Safe = Blue
+        let barColor = t > 180 ? '#EF4444' : (t > 120 ? '#F59E0B' : '#38BDF8');
+
+        timeHtml += `
+            <tr>
+                <td style="text-align: left; font-weight:900; color:#1E293B;">Q.${q.displayNumber}</td>
+                <td style="text-align: left;">${q.subject.split(' ')[0]}</td>
+                <td style="text-align: left; color:${statusColor}; font-weight:700;"><i class="fas ${icon}"></i> ${statusText}</td>
+                <td style="text-align: center; font-family:monospace; font-size:1.1rem; color:#475569; font-weight:bold;">${timeStr}</td>
+                <td style="text-align:left; vertical-align: middle;">
+                    <div style="width: 100%; background: #F1F5F9; border-radius: 20px; height: 12px; overflow: hidden; display: flex;">
+                        <div style="width: ${barWidth}%; background: ${barColor}; height: 100%; border-radius: 20px;"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    timeHtml += `</tbody></table>`;
+    document.getElementById('time-analysis-container').innerHTML = timeHtml;
     // 5. Render exact Quizrr Stacked Potential Chart
     renderPotentialChart(totals);}
 function renderPotentialChart(totals) {
@@ -1626,12 +1683,18 @@ function loadSolutionQuestion(index) {
     });
     document.getElementById('sol-subject-tabs').innerHTML = tabsHtml;
 
-    // 2. Set Question Header
+// 2. Set Question Header (With Time Badge)
+    let qTimeSec = timeSpentOnQuestion[index] || 0;
+    let qm = Math.floor(qTimeSec / 60); let qs = qTimeSec % 60;
+    let timeStr = `${qm < 10 ? '0'+qm : qm}:${qs < 10 ? '0'+qs : qs}`;
+
     document.getElementById('sol-q-header').innerHTML = `
-        <span><i class="fas fa-layer-group"></i> ${q.sectionName}</span>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span><i class="fas fa-layer-group"></i> ${q.sectionName}</span>
+            <span style="color:#2563EB; background:#EFF6FF; padding:4px 10px; border-radius:6px; border:1px solid #BFDBFE; font-size:0.8rem; display:flex; align-items:center; gap:6px;"><i class="fas fa-stopwatch"></i> ${timeStr}</span>
+        </div>
         <span>Q.${q.displayNumber} &nbsp;|&nbsp; +${q.posMarks} / -${q.negMarks}</span>
     `;
-
 // 3. Set Status Banner (Sleek Pill Style + Marked Tag)
     const banner = document.getElementById('sol-status-banner');
     banner.style.textAlign = 'left'; 
