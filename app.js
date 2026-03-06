@@ -891,7 +891,13 @@ document.getElementById('btn-mark-review').addEventListener('click', () => {
     }
     loadQuestion(currentQuestionIndex + 1);
 });
-
+// 🔥 NEW: THE MISSING SUBMIT BUTTON CONNECTION
+document.getElementById('btn-submit').addEventListener('click', () => {
+    // Add a safety confirmation so students don't accidentally submit!
+    if(confirm("Are you sure you want to submit the test? You will not be able to change your answers.")) {
+        submitExam();
+    }
+});
 // Timer Setup
 function startTimer(durationSeconds) {
     let timer = durationSeconds, minutes, seconds;
