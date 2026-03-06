@@ -1804,4 +1804,3 @@ window.printAnalysis = function() {
         window.onafterprint = null; // Clear the engine listener
     };
 };
-// 🚨 NO MORE STRAY BRACKETS BELOW THIS LINE! 🚨
