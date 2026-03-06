@@ -81,18 +81,23 @@ auth.onAuthStateChanged((user) => {
 
 // 2. Google Login Button Click
 document.getElementById('btn-google-login').onclick = function() {
-    // 1. Create a pure, unmodified Google Provider
-    var provider = new firebase.auth.GoogleAuthProvider();
-    
-    // 2. Execute the popup directly
-    firebase.auth().signInWithPopup(provider)
-    .then(function(result) {
-        console.log("Successfully logged in:", result.user.displayName);
-    })
-    .catch(function(error) {
-        console.error("Login Error:", error);
-        alert("Login Failed: " + error.message);
-    });
+    try {
+        // 1. Create a pure, unmodified Google Provider
+        var provider = new firebase.auth.GoogleAuthProvider();
+        
+        // 2. Execute the popup using the 'auth' variable we connected at the top
+        auth.signInWithPopup(provider)
+        .then(function(result) {
+            console.log("Successfully logged in:", result.user.displayName);
+        })
+        .catch(function(error) {
+            console.error("Login Error:", error);
+            alert("Login Failed: " + error.message);
+        });
+    } catch (err) {
+        console.error("Critical Setup Error:", err);
+        alert("Firebase is not connected properly. Check the top of your app.js file!");
+    }
 };
 // 3. Logout Button Click
 document.getElementById('btn-logout').addEventListener('click', () => {
