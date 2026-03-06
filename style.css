@@ -1148,24 +1148,87 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 25px;
 }
-/* ================= ULTIMATE UNIFIED PRINT ENGINE ================= */
+/* ================= ULTRA-PREMIUM PDF ENGINE ================= */
 @media print {
-    @page { size: A4 portrait; margin: 10mm; }
+    @page { size: A4 portrait; margin: 15mm; }
 
-    /* --- 1. GLOBAL FIXES --- */
+    /* --- 1. GLOBAL RESET FOR PREMIUM VIBE --- */
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    html, body { background: white !important; height: auto !important; overflow: visible !important; color: black !important; }
+    html, body { background: #FFFFFF !important; font-family: 'Inter', sans-serif !important; color: #1E293B !important; }
 
-    /* --- 2. HIDE UNNECESSARY UI CLUTTER --- */
-    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button,
-    .btn-back, .qbyq-tabs, .modal-header, .close-btn, #btn-print-paper {
+    /* --- 2. HIDE ALL UI CLUTTER --- */
+    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button, .qz-top-header label,
+    .btn-back, .qbyq-tabs, .modal-header, .close-btn, #btn-print-paper, .qbyq-header {
         display: none !important;
     }
 
-    /* --- 3. SCENARIO A: PRINTING THE QUESTION PAPER (MODAL IS OPEN) --- */
-    body:has(#app-modal[style*="display: flex"]) .app-screen {
-        display: none !important; /* Hide the background app so it doesn't overlap */
+    /* --- 3. PREMIUM PRINT MODE ACTIVATION --- */
+    body.premium-print-mode .app-screen:not(#screen-analysis) { display: none !important; }
+    body.premium-print-mode #app-modal { display: none !important; }
+    
+    body.premium-print-mode .qz-layout, body.premium-print-mode .qz-content-area, body.premium-print-mode .custom-scrollbar {
+        height: auto !important; max-height: none !important; overflow: visible !important;
+        display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; 
+        margin: 0 !important; padding: 0 !important; opacity: 1 !important; background: transparent !important;
     }
+
+    /* --- 4. THE HEADER (Looks like a formal Cover Title) --- */
+    .qz-top-header {
+        text-align: center; border-bottom: 4px solid #38BDF8 !important;
+        padding-bottom: 25px !important; margin-bottom: 40px !important; display: block !important;
+    }
+    .qz-top-header::before {
+        content: "ANVESHAM ANALYTICS REPORT";
+        display: block; font-size: 10pt; font-weight: 800; color: #8B5CF6 !important;
+        letter-spacing: 4px; margin-bottom: 10px;
+    }
+    .qz-top-header h1 { font-size: 26pt !important; font-weight: 900 !important; color: #0F172A !important; text-transform: uppercase; margin: 0 !important; letter-spacing: 1px; }
+
+    /* --- 5. THE SEXY CARDS --- */
+    .qz-card {
+        background: white !important; border: 2px solid #E2E8F0 !important;
+        border-radius: 16px !important; padding: 30px !important;
+        box-shadow: none !important; margin-bottom: 30px !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* The Massive Score Hero Box */
+    .score-hero-card {
+        background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%) !important;
+        border: 2px solid #BFDBFE !important; text-align: center !important; padding: 40px !important;
+    }
+    .score-hero-card .qz-card-title { font-size: 14pt !important; color: #64748B !important; text-transform: uppercase; letter-spacing: 2px; text-align: center; width: 100%; display: block; margin-bottom: 10px; }
+    .score-massive-display { display: block !important; text-align: center !important; }
+    .score-massive-display .score-val { font-size: 65pt !important; color: #2563EB !important; letter-spacing: -3px; }
+
+    /* The Metrics HUD (Forces 3 columns) */
+    .qz-metrics-6grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; }
+    .qz-metric-box { background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; border-radius: 12px !important; padding: 20px !important; }
+
+    /* --- 6. SLEEK TABLES --- */
+    .qz-table th { background: #F1F5F9 !important; color: #334155 !important; font-weight: 800 !important; border-bottom: 2px solid #CBD5E1 !important; }
+    .qz-table td { border-bottom: 1px solid #E2E8F0 !important; }
+    .qz-table tr:nth-child(even) td { background: #F8FAFC !important; }
+
+    /* --- 7. WATERMARK & PAGING --- */
+    body.premium-print-mode .qz-content-area::after {
+        content: ""; position: fixed; top: 50%; left: 50%; width: 500px; height: 500px;
+        background-image: url('anvesham-logo.png'); background-size: contain; background-repeat: no-repeat;
+        opacity: 0.03; transform: translate(-50%, -50%); z-index: -10; pointer-events: none;
+    }
+
+    .analysis-view { page-break-before: always; border: none !important; }
+    .analysis-view:first-of-type { page-break-before: auto; }
+    .qbyq-subj-wrapper { page-break-inside: avoid !important; margin-bottom: 40px !important; }
+
+    /* Ensure chart canvases print clearly */
+    canvas { max-width: 100% !important; height: auto !important; }
+}
+
+/* --- QUESTION PAPER PRINTING (Scenario B: Modal is open) --- */
+@media print {
+    body:has(#app-modal[style*="display: flex"]) .app-screen { display: none !important; }
+    body:has(#app-modal[style*="display: flex"]) { background: white !important; }
     
     #app-modal[style*="display: flex"] {
         position: absolute !important; left: 0 !important; top: 0 !important;
@@ -1179,42 +1242,5 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
         max-width: 100% !important; max-height: none !important; overflow: visible !important;
         margin: 0 !important; padding: 0 !important; display: block !important;
     }
-
-    /* --- 4. SCENARIO B: PRINTING THE ANALYSIS REPORT (MODAL IS CLOSED) --- */
-    body:not(:has(#app-modal[style*="display: flex"])) #app-modal {
-        display: none !important; /* Ensure the modal is totally gone */
-    }
-    
-    body:not(:has(#app-modal[style*="display: flex"])) .app-screen:not(#screen-analysis) {
-        display: none !important; /* Hide everything except the analysis screen */
-    }
-
-    body:not(:has(#app-modal[style*="display: flex"])) html, 
-    body:not(:has(#app-modal[style*="display: flex"])) body, 
-    body:not(:has(#app-modal[style*="display: flex"])) #screen-analysis, 
-    body:not(:has(#app-modal[style*="display: flex"])) .qz-layout, 
-    body:not(:has(#app-modal[style*="display: flex"])) .qz-content-area, 
-    body:not(:has(#app-modal[style*="display: flex"])) .custom-scrollbar {
-        height: auto !important; max-height: none !important; overflow: visible !important;
-        display: block !important; position: relative !important; opacity: 1 !important;
-    }
-
-    .qz-content-area { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; left: 0 !important; }
-    .qz-top-header { border-bottom: 3px solid #38BDF8 !important; padding-bottom: 15px !important; margin-bottom: 30px !important; text-align: center; display: block !important; }
-    .qz-top-header h1 { font-size: 24pt !important; color: #0F172A !important; text-transform: uppercase; letter-spacing: 2px; }
-    
-    /* The Premium Watermark exclusively for Analysis */
-    body:not(:has(#app-modal[style*="display: flex"])) .qz-content-area::after {
-        content: ""; position: fixed; top: 50%; left: 50%; width: 400px; height: 400px;
-        background-image: url('anvesham-logo.png'); background-size: contain; background-repeat: no-repeat;
-        opacity: 0.04; transform: translate(-50%, -50%); z-index: -10; pointer-events: none;
-    }
-
-    /* --- 5. PREVENT PAGE CUTTING FOR BOTH --- */
-    .qz-card, .qz-metric-box, .q-section-block, tr, .qbyq-subj-wrapper, .qp-q-block, .qp-instructions {
-        page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 20px !important;
-    }
-
-    .analysis-view { page-break-before: always; margin-bottom: 30px !important; box-shadow: none !important; border: none !important; }
-    .analysis-view:first-of-type { page-break-before: auto; }
+    .qp-q-block, .qp-instructions { page-break-inside: avoid !important; margin-bottom: 20px !important; }
 }
