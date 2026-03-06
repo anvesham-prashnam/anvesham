@@ -249,8 +249,11 @@
                     <div class="subject-tabs" id="subject-tabs" style="display: flex; gap: 5px;"></div>
                 </div>
                 <div class="section-tabs" id="section-tabs" style="border-radius: 0 0 8px 8px; border-top: none; margin-bottom: 20px; background: #f8f9fa;"></div>
-                <div class="question-header">
-                    <div class="q-type">Question Type: <span id="q-type-text">--</span></div>
+               <div class="question-header">
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <div class="q-type">Question Type: <span id="q-type-text">--</span></div>
+                        <div class="live-time-badge"><i class="fas fa-stopwatch"></i> Time: <span id="live-q-time">00:00</span></div>
+                    </div>
                     <div class="q-marks">Marks: <span id="q-pos-marks" class="text-green">--</span> | Negative: <span id="q-neg-marks" class="text-red">--</span></div>
                 </div>
                 <div class="question-body">
@@ -326,7 +329,7 @@
                     <li class="active" onclick="switchAnalysisTab('overview', this)"><i class="fas fa-border-all"></i> Overview <i class="fas fa-chevron-right arrow"></i></li>
                     <li onclick="switchAnalysisTab('performance', this)"><i class="fas fa-chart-line"></i> Performance Analysis <i class="fas fa-chevron-right arrow"></i></li>
                     <li onclick="switchAnalysisTab('potential', this)"><i class="fas fa-level-up-alt"></i> Score Potential <i class="fas fa-chevron-right arrow"></i></li>
-                  
+                  <li onclick="switchAnalysisTab('time', this)"><i class="fas fa-stopwatch"></i> Time Analysis <i class="fas fa-chevron-right arrow"></i></li>
                     <li onclick="switchAnalysisTab('qbyq', this)"><i class="fas fa-tasks"></i> Qs by Qs Analysis <i class="fas fa-chevron-right arrow"></i></li>
                 </ul>
             </aside>
@@ -421,7 +424,14 @@
                     </div>
                 </div>
 
-          
+          <div id="tab-time" class="analysis-view">
+                    <div class="qz-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+                            <h3 class="qz-card-title" style="margin:0;"><i class="fas fa-stopwatch text-purple"></i> Time-Wise Analysis</h3>
+                        </div>
+                        <div id="time-analysis-container"></div>
+                    </div>
+                </div>
 
                 <div id="tab-qbyq" class="analysis-view">
                     <div class="qz-card">
