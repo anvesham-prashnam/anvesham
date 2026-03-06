@@ -1148,16 +1148,16 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 25px;
 }
-/* ================= ULTRA-PREMIUM PDF ENGINE ================= */
+/* ================= ULTRA-PREMIUM PDF ENGINE (BUG-FREE PAGINATION) ================= */
 @media print {
-    @page { size: A4 portrait; margin: 15mm; }
+    @page { size: A4 portrait; margin: 12mm; }
 
-    /* --- 1. GLOBAL RESET FOR PREMIUM VIBE --- */
+    /* --- 1. GLOBAL RESET --- */
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body { background: #FFFFFF !important; font-family: 'Inter', sans-serif !important; color: #1E293B !important; }
 
     /* --- 2. HIDE ALL UI CLUTTER --- */
-    .qz-dark-strip, .qz-white-sidebar, .qz-top-header button, .qz-top-header label,
+    .qz-dark-strip, .qz-white-sidebar, .qz-top-header,
     .btn-back, .qbyq-tabs, .modal-header, .close-btn, #btn-print-paper, .qbyq-header {
         display: none !important;
     }
@@ -1165,28 +1165,25 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     /* --- 3. PREMIUM PRINT MODE ACTIVATION --- */
     body.premium-print-mode .app-screen:not(#screen-analysis) { display: none !important; }
     body.premium-print-mode #app-modal { display: none !important; }
-    
+
     body.premium-print-mode .qz-layout, body.premium-print-mode .qz-content-area, body.premium-print-mode .custom-scrollbar {
         height: auto !important; max-height: none !important; overflow: visible !important;
-        display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; 
-        margin: 0 !important; padding: 0 !important; opacity: 1 !important; background: transparent !important;
+        display: block !important; position: static !important; width: 100% !important; max-width: 100% !important;
+        margin: 0 !important; padding: 0 !important; background: transparent !important;
     }
 
-/* --- 4. HIDE THE OLD HEADER --- */
-    .qz-top-header { display: none !important; }
-
-    /* --- 5. THE ULTIMATE VFX COVER PAGE --- */
+    /* --- 4. THE ULTIMATE VFX COVER PAGE --- */
     #print-cover-page { display: none; }
     body.premium-print-mode #print-cover-page {
         display: flex !important; flex-direction: column; justify-content: space-between; align-items: center;
-        height: 250mm; /* Forces it to perfectly fill an A4 page */
+        min-height: 260mm; /* Forces it to perfectly fill exactly ONE A4 page */
         page-break-after: always; padding: 15mm 20mm; box-sizing: border-box;
         background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%) !important;
         border: 2px solid #E2E8F0 !important; border-radius: 20px !important;
-        margin-bottom: 20px !important; position: relative; overflow: hidden;
+        position: relative; overflow: hidden; margin-bottom: 0 !important;
     }
 
-    /* Abstract Background Glows (VFX) */
+    /* VFX Abstract Glows */
     body.premium-print-mode #print-cover-page::before {
         content: ""; position: absolute; top: -150px; left: -150px; width: 400px; height: 400px;
         background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%) !important; border-radius: 50%; z-index: 0;
@@ -1197,71 +1194,93 @@ button.pal-btn.s-not-answered { padding-bottom: 8px; }
     }
 
     /* Cover Page Elements */
-    .cover-brand, .cover-title-box, .cover-score-circle, .cover-stats-grid, .cover-subj-performance, .cover-footer { z-index: 10; position: relative; }
-    
+    .cover-brand, .cover-title-box, .cover-score-circle, .cover-stats-grid, .cover-subj-performance, .cover-footer { z-index: 10; position: relative; width: 100%; }
     .cover-brand { text-align: center; margin-top: 10px; }
     .cover-brand-text { font-size: 26pt; font-weight: 900; color: #0F172A !important; letter-spacing: 6px; margin-bottom: 5px; }
     .cover-brand-sub { font-size: 11pt; font-weight: 800; color: #38BDF8 !important; letter-spacing: 3px; text-transform: uppercase; }
-
-    .cover-title-box { text-align: center; width: 100%; padding: 25px; background: white !important; border-radius: 16px; border: 1px solid #E2E8F0 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.03) !important; margin: 25px 0; }
+    .cover-title-box { text-align: center; padding: 25px; background: white !important; border-radius: 16px; border: 1px solid #E2E8F0 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.03) !important; margin: 25px 0; }
     .cover-title-box h1 { font-size: 26pt !important; font-weight: 900 !important; color: #1E293B !important; margin: 0 0 15px 0 !important; text-transform: uppercase; letter-spacing: 1px; }
     .cover-meta { font-size: 12pt; color: #64748B !important; }
-
-    .cover-score-circle { width: 220px; height: 220px; border-radius: 50%; background: white !important; border: 12px solid #38BDF8 !important; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 15px 35px rgba(56,189,248,0.2) !important; margin: 10px 0; }
+    .cover-score-circle { width: 220px; height: 220px; border-radius: 50%; background: white !important; border: 12px solid #38BDF8 !important; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 15px 35px rgba(56,189,248,0.2) !important; margin: 10px auto; }
     .csc-label { font-size: 10pt; font-weight: 800; color: #64748B !important; letter-spacing: 2px; margin-bottom: 5px; }
     .csc-value { font-size: 65pt; font-weight: 900; color: #0F172A !important; line-height: 1; margin-bottom: 5px; letter-spacing: -3px; }
     .csc-max { font-size: 12pt; font-weight: 700; color: #94A3B8 !important; }
-
-    .cover-stats-grid { display: flex; justify-content: space-between; width: 100%; margin: 25px 0; gap: 20px; }
-    .c-stat-box { flex: 1; background: white !important; border: 1px solid #E2E8F0 !important; padding: 25px; border-radius: 16px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.02) !important; }
+    .cover-stats-grid { display: flex; justify-content: space-between; margin: 25px 0; gap: 20px; }
+    .c-stat-box { flex: 1; background: white !important; border: 1px solid #E2E8F0 !important; padding: 25px; border-radius: 16px; text-align: center; }
     .cs-label { font-size: 11pt; font-weight: 800; color: #64748B !important; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
     .cs-val { font-size: 28pt; font-weight: 900; }
-
-    .cover-subj-performance { width: 100%; background: white !important; padding: 30px; border-radius: 16px; border: 1px solid #E2E8F0 !important; box-shadow: 0 5px 15px rgba(0,0,0,0.02) !important; margin-bottom: 20px; }
+    .cover-subj-performance { background: white !important; padding: 30px; border-radius: 16px; border: 1px solid #E2E8F0 !important; margin-bottom: 20px; }
     .cover-subj-performance h3 { font-size: 13pt; font-weight: 800; color: #1E293B !important; margin: 0 0 25px 0; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
     .cover-subj-row { display: flex; align-items: center; margin-bottom: 18px; }
     .cover-subj-name { width: 130px; font-weight: 800; font-size: 12pt; color: #475569 !important; text-transform: uppercase; }
-    .cover-subj-bar-bg { flex: 1; height: 14px; background: #F1F5F9 !important; border-radius: 10px; overflow: hidden; margin: 0 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important; }
+    .cover-subj-bar-bg { flex: 1; height: 14px; background: #F1F5F9 !important; border-radius: 10px; overflow: hidden; margin: 0 20px; }
     .cover-subj-bar-fill { height: 100%; border-radius: 10px; }
     .cover-subj-score { width: 70px; text-align: right; font-weight: 900; font-size: 14pt; }
+    .cover-footer { font-size: 9pt; color: #94A3B8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; text-align: center; }
 
-    .cover-footer { font-size: 9pt; color: #94A3B8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; margin-top: auto; text-align: center; width: 100%; }
-
-    /* --- 6. THE REGULAR REPORT CARDS & TABLES --- */
-    .qz-card { background: white !important; border: 2px solid #E2E8F0 !important; border-radius: 16px !important; padding: 30px !important; box-shadow: none !important; margin-bottom: 30px !important; page-break-inside: avoid !important; }
-    .score-hero-card { display: none !important; } /* Hidden because Cover Page handles it now! */
-    .qz-metrics-6grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; }
-    .qz-metric-box { background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; border-radius: 12px !important; padding: 20px !important; }
+    /* --- 5. THE FIX: FLUID PAGINATION --- */
+    /* DO NOT use 'avoid' on these massive wrappers or the browser will crash! */
+    .analysis-view, .qz-card { 
+        page-break-inside: auto !important; 
+        break-inside: auto !important; 
+        background: white !important; 
+        border: 2px solid #E2E8F0 !important; 
+        border-radius: 16px !important; 
+        padding: 30px !important; 
+        box-shadow: none !important; 
+        margin-bottom: 40px !important;
+        display: block !important;
+    }
     
-    .qz-table th { background: #F1F5F9 !important; color: #334155 !important; font-weight: 800 !important; border-bottom: 2px solid #CBD5E1 !important; }
-    .qz-table td { border-bottom: 1px solid #E2E8F0 !important; }
+    .analysis-view { page-break-before: always; border: none !important; padding: 0 !important; }
+    .analysis-view:first-of-type { page-break-before: auto; }
+    .score-hero-card { display: none !important; } /* Hidden because Cover Page handles it */
+
+    /* ONLY protect the tiny inner boxes from cutting in half */
+    .qz-metric-box, tr, .print-q-card, .c-stat-box, .cover-subj-row, .print-opts-grid, canvas {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* --- 6. GRIDS & TABLES --- */
+    .qz-metrics-6grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; margin-bottom: 20px; }
+    .qz-metric-box { background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; border-radius: 12px !important; padding: 20px !important; }
+    .qz-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .qz-table th { background: #F1F5F9 !important; color: #334155 !important; font-weight: 800 !important; border-bottom: 2px solid #CBD5E1 !important; padding: 15px; }
+    .qz-table td { border-bottom: 1px solid #E2E8F0 !important; padding: 15px; }
     .qz-table tr:nth-child(even) td { background: #F8FAFC !important; }
 
-    /* --- 7. WATERMARK & PAGING --- */
+    /* --- 7. DYNAMIC QUESTIONS CSS --- */
+    #print-questions-container { display: none; }
+    body.premium-print-mode #print-questions-container { display: block !important; margin-top: 50px; }
+    .print-q-report-header { text-align: center; margin: 60px 0 30px 0; border-top: 4px solid #0F172A; padding-top: 20px; page-break-before: always; }
+    .print-q-report-header h2 { font-size: 20pt !important; color: #0F172A !important; letter-spacing: 2px; font-weight: 900 !important; }
+    .print-sec-header { background: #1E293B !important; color: white !important; padding: 12px 20px; font-weight: bold; font-size: 14pt; border-radius: 8px; margin: 30px 0 20px 0; }
+    .print-q-card { background: white !important; border: 2px solid #E2E8F0 !important; border-radius: 12px; padding: 25px; margin-bottom: 25px; }
+    .print-q-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 15px; margin-bottom: 15px; }
+    .print-q-header .q-num { font-size: 14pt; font-weight: 900; color: #38BDF8 !important; }
+    .print-q-header .q-marks { padding: 4px 12px; border-radius: 6px; color: white !important; font-weight: bold; }
+    .print-q-text { font-size: 11pt; color: #1E293B !important; margin-bottom: 20px; line-height: 1.6; }
+    .print-opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .print-opt-box { position: relative; padding: 15px; border-radius: 8px; font-size: 10pt; line-height: 1.5; }
+    .opt-badge { position: absolute; top: -10px; right: 10px; padding: 4px 12px; border-radius: 12px; font-size: 8pt; font-weight: bold; color: white !important; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .opt-badge.correct { background: #10B981 !important; }
+    .opt-badge.wrong { background: #EF4444 !important; }
+    .print-explanation { background: #F8FAFC !important; border-left: 4px solid #38BDF8 !important; padding: 15px; border-radius: 0 8px 8px 0; font-size: 10pt; color: #334155 !important; margin-top: 15px; }
+    
+    /* Premium Watermark */
     body.premium-print-mode .qz-content-area::after {
         content: ""; position: fixed; top: 50%; left: 50%; width: 500px; height: 500px;
         background-image: url('anvesham-logo.png'); background-size: contain; background-repeat: no-repeat;
         opacity: 0.03; transform: translate(-50%, -50%); z-index: -10; pointer-events: none;
     }
-    .analysis-view { page-break-before: always; border: none !important; }
-    .qbyq-subj-wrapper { page-break-inside: avoid !important; margin-bottom: 40px !important; }
-    canvas { max-width: 100% !important; height: auto !important; }
+}
 
-    /* --- 8. THE DYNAMIC QUESTION GENERATOR STYLES --- */
-    #print-questions-container { display: none; }
-    body.premium-print-mode #print-questions-container { display: block !important; margin-top: 50px; }
-    .print-q-report-header { text-align: center; margin: 60px 0 30px 0; border-top: 4px solid #0F172A; padding-top: 20px; page-break-before: always; }
-    .print-q-report-header h2 { font-size: 20pt !important; color: #0F172A !important; letter-spacing: 2px; font-weight: 900 !important; }
-    .print-sec-header { background: #1E293B !important; color: white !important; padding: 12px 20px; font-weight: bold; font-size: 14pt; border-radius: 8px; margin: 30px 0 20px 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .print-q-card { background: white !important; border: 2px solid #E2E8F0 !important; border-radius: 12px; padding: 25px; margin-bottom: 25px; page-break-inside: avoid !important; box-shadow: none !important; }
-    .print-q-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 15px; margin-bottom: 15px; }
-    .print-q-header .q-num { font-size: 14pt; font-weight: 900; color: #38BDF8 !important; }
-    .print-q-header .q-marks { padding: 4px 12px; border-radius: 6px; color: white !important; font-weight: bold; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .print-q-text { font-size: 11pt; color: #1E293B !important; margin-bottom: 20px; line-height: 1.6; }
-    .print-opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; page-break-inside: avoid !important; }
-    .print-opt-box { position: relative; padding: 15px; border-radius: 8px; font-size: 10pt; line-height: 1.5; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; page-break-inside: avoid !important; }
-    .opt-badge { position: absolute; top: -10px; right: 10px; padding: 4px 12px; border-radius: 12px; font-size: 8pt; font-weight: bold; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .opt-badge.correct { background: #10B981 !important; }
-    .opt-badge.wrong { background: #EF4444 !important; }
-    .print-explanation { background: #F8FAFC !important; border-left: 4px solid #38BDF8 !important; padding: 15px; border-radius: 0 8px 8px 0; font-size: 10pt; color: #334155 !important; margin-top: 15px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; page-break-inside: avoid !important; }
+/* --- QUESTION PAPER PRINTING (Modal is open) --- */
+@media print {
+    body:has(#app-modal[style*="display: flex"]) .app-screen { display: none !important; }
+    body:has(#app-modal[style*="display: flex"]) { background: white !important; }
+    #app-modal[style*="display: flex"] { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; display: block !important; background: white !important; overflow: visible !important; }
+    #app-modal[style*="display: flex"] .modal-content, #app-modal[style*="display: flex"] .modal-body { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; max-height: none !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; display: block !important; }
+    .qp-q-block, .qp-instructions { page-break-inside: avoid !important; margin-bottom: 20px !important; }
 }
