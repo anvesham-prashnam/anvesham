@@ -82,20 +82,16 @@ auth.onAuthStateChanged((user) => {
 // 2. Google Login Button Click
 document.getElementById('btn-google-login').addEventListener('click', () => {
     try {
-        // 1. Create the provider explicitly
         const provider = new firebase.auth.GoogleAuthProvider();
         
-        // 2. Force it to ask for Email and Profile data
         provider.addScope('email');
         provider.addScope('profile');
-        
-        // 3. Force the "Choose Account" popup to appear (clears browser caching bugs)
         provider.setCustomParameters({
             prompt: 'select_account'
         });
         
-        // 4. Use the direct firebase.auth() call to prevent variable ghosting
-        firebase.auth().signInWithPopup(provider)
+        // 🔥 THE FIX: Use the global 'auth' variable we created at the top of the file!
+        auth.signInWithPopup(provider)
         .then((result) => {
             console.log("Successfully logged in as:", result.user.displayName);
         })
@@ -109,7 +105,6 @@ document.getElementById('btn-google-login').addEventListener('click', () => {
         alert("System Error: Could not initialize Google Login.");
     }
 });
-
 // 3. Logout Button Click
 document.getElementById('btn-logout').addEventListener('click', () => {
     auth.signOut().then(() => {
